@@ -1,0 +1,108 @@
+<head>	
+
+{% include "./style.html" %}
+
+
+{% load static %}
+
+
+ </head>
+
+
+
+<body>
+
+{# <div id="container-01" class="mol-container"></div> #}
+
+
+
+<p>
+<a href="#view_{{d.domain_id}}" data-toggle="collapse"><img src="/static/imgs/rasmol.png" alt="rasmol_pdb"></a>
+  <button class="btn btn-primary" type="button" target="#collapseExample02" id="01" >
+    Button with data-target
+  </button>
+
+
+</p>
+
+
+<div class="collapse" id="view_{{d.domain_id}}" pdb-url="http://www.cathdb.info/version/current/api/rest/id/{{d.domain_id}}.pdb">
+  <div class="card card-block" id="logs">
+  You are viewing {{d.domain_id}}
+	<div id="container" class="mol-container"></div>
+  </div>
+</div>
+
+
+
+
+<p>Another paragraph!!!</p>
+
+<div class="collapse" id="collapseExample02" ct="02" pdb-url="http://www.cathdb.info/version/current/api/rest/id/2c7wA00.pdb">
+  <div class="card card-block" id="logs">
+    Anim pariatur cliche reprehenderit, enim eiusmod high life accusamus terry richardson ad squid. Nihil anim keffiyeh helvetica, craft beer labore wes anderson cred nesciunt sapiente ea proident.
+	<div id="container" class="mol-container"></div>
+
+  </div>
+</div>
+
+<table class="table table-bordered " id="myTable">
+<thead>
+  <tr>
+    <th></th>
+    <th></th>
+    <th></th>
+  </tr>
+</thead>
+
+<tbody>
+    <tr data-toggle="collapse" data-target="#accordion" class="clickable-row">
+        <td>Some Stuff</td>
+        <td>Some more stuff</td>
+        <td>And some more</td>
+    </tr>
+
+
+    {% with ''|center:100 as range %}
+      {% for _ in range %}
+        
+        <tr class="clickable-row" id="row{{forloop.counter}}">
+        <td colspan="3">
+            {{ forloop.counter }}
+            {# <div id="accordion" class="collapse" pdb-url="http://www.cathdb.info/version/current/api/rest/id/{{d.domain_id}}.pdb">     </div> #}
+        </td>
+        <td></td>
+    </tr>
+      {% endfor %}
+    {% endwith %}
+</tbody>
+</table>
+{# <script src="https://cdnjs.cloudflare.com/ajax/libs/jspanel3/3.9.3/jquery.jspanel.min.js"></script> #}
+<script type="text/javascript">
+    $('#01').click(function () {
+        "use strict";
+        var mypanel=$.jsPanel({
+            position: {
+                my: "left-top",
+                at: "left-top",
+                offsetY: 52
+            },
+            headerTitle: "ScatterPlot",
+            content: "<p>A plot containing information about outlier</p>",
+
+        });
+            mypanel.content.append("<a href='#row1' onclick='$(`#row10`).click();' data-toggle='table'>row1</a>")
+
+    });
+
+$( document ).ready(function() {
+
+   $('.table > tbody > tr').click(function() {
+    $(this).addClass('bg-info').siblings().removeClass('bg-info');
+  // row was clicked
+    });
+});
+</script>
+
+</body>
+{# <div id="container-01" class="mol-container"></div> #}

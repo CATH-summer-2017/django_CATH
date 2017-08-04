@@ -1,0 +1,129 @@
+<head>
+	
+
+{% include "./style.html" %}
+
+{# {% include "./viewPDB.template" %} #}
+{% include "./viewPDB.html" %}
+
+{% load static %}
+
+ </head>
+
+
+<body>
+
+
+<div class="container">
+<section>
+
+<div class="mt-1">
+  <h3 class="display-3">
+   Doped_CATH
+  </h3>
+</div>
+
+<p class="lead">
+	This page is generated from a list of CATH domain ID's, usually suspicious of being badly packed (high nDOPE).
+  Each row represents a single domain from CATH.
+  There is no button you can click, but clicking on shiny bluish text will lead you to domain page or superfamily page.
+</p>
+
+<p>
+<button class="btn btn-info" type="button" data-toggle="collapse" data-target="#config" aria-expanded="true" aria-controls="config">
+  Config
+</button>
+</p>
+
+</section>
+
+
+{% include "./config.html" %}
+
+
+<!--     <ul>
+        <li><a href="/tst/{{ q.id }}/">
+        {{q.id}}||
+        {{q.question_text }}||
+        {{q.pub_date}}||
+        {{q.choice_set.all}}</a></li>
+    </ul> -->
+{{tst_a}}
+
+{% if query_set %}
+
+<p class="table-heading">
+Displaying {{query_set|length}} putative superfamily clusters for merging
+</p>
+	{{request}}
+    <table class="table table-sm">
+		<thead>
+			<th>Domain id</th>
+			<th>PDB</th>
+			<th>Superfamily.ID</th>
+			<th>Superfamily.S35_count</th>
+			<th>Domain Length</th>
+			<th>Raw DOPE</th>
+			<th>Normalised DOPE</th>
+		</thead>
+		<tbody>
+			
+			
+
+			{% for d in query_set %}
+			<tr>
+				<th><a target="_blank" href="http://www.cathdb.info/version/current/domain/{{d.domain_id}}/">{{d.domain_id}}</a></th>
+				<th>
+				{# <a target="_blank" href="http://www.cathdb.info/version/current/api/rest/id/{{d.domain_id}}.pdb"><img src="{% static "imgs/rasmol.png" %}" alt="rasmol_pdb"/></a></th> #}
+				<a href="#view_{{d.domain_id}}" data-toggle="collapse"><img src="{% static "imgs/rasmol.png" %}" alt="rasmol_pdb"/></a></th>
+
+				{# <th><a href="/tst/domain/{{ d.domain_id }}/">{{d.domain_id}}</a></th> #}
+				<th>
+				<a target="_blank" href="/tst/superfamily/{{d.superfamily}}/">
+				{{d.superfamily}}</a> </th>
+				{# {{d.superfamily}}				</th> #}
+				{# <th>{{d.classification.get_s35cnt}}</th> #}
+				<th>{{d.sf_s35cnt}}</th>
+				<th>{{d.domain_length}}</th>
+				<th>{{d.raw_DOPE}}</th>
+				{# <th>{{d.classification}}</th> #}
+				<th>{{d.nDOPE}}</th>
+			</tr>
+
+			<tr>
+        		<td colspan="10">
+            		{# <div id="view_{{d.domain_id}}" class="collapse" pdb-url="http://www.cathdb.info/version/current/api/rest/id/{{d.domain_id}}.pdb"> #}
+            		{# halsdfhlsadf #}
+            		{# sadfjksadlfjl #}
+						{# <div id="container" class="mol-container"></div> #}
+            		{# </div> #}
+					{% include "./PDBcollapse.html" %}
+
+        		</td>
+		    </tr>
+			{# {% include "./PDBcollapse.temp" %} #}
+		
+			{% endfor %}
+			{# {% for valst in query_set.values_list %} #}
+	<!--		<tr>
+				<th>{{valst.0}}</th>
+				<th>{{valst.1}}</th>
+				<th>{{valst.2}}</th>
+				<th>{{valst.3}}</th>
+				<th>{{valst.4}}</th>
+
+			</tr>
+			{# {% endfor %} #}
+	-->
+		</tbody>
+	</table>
+{% else %}
+    <p>No domain list is provided.</p>
+{% endif %}
+
+
+</div>
+
+
+
+</body>
