@@ -8,8 +8,8 @@ from django.db.models import Avg,StdDev,Count
 from django.urls import reverse
 from django.templatetags.static import static
 # from django.contrib.staticfiles.templatetags.staticfiles import static
-
-import requests
+# 
+# import requests
 # Create your models here.
 
 from CATH_API.lib import *
