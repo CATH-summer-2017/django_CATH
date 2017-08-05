@@ -28,6 +28,7 @@ before script:
 
 script:
   - cd rootsite
-  - ./manage.py runserver
+  - ./manage.py runserver &
   - # do nothing;
+  - wget http://localhost:8000/tst/domain/
   # - 
