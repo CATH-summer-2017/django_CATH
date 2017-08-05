@@ -16,4 +16,4 @@ before script:
   - mysql -e 'create database travis_ci_db;'
 
 script:
-  - ;
+  - # do nothing;
