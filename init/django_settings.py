@@ -14,11 +14,27 @@ INSTALLED_APPS += (
     'django_extensions',
 )
 
-DATABASES['default'] = {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'django',
-        'USER': 'django',
-        'PASSWORD': 'Django_passw0rd',
-        'HOST': '127.0.0.1',
-        'PORT': '3306',
-    }
+if os.getenv('TRAVIS', None):
+	# Configuration for travis
+    SECRET_KEY = "SecretKeyForUseOnTravis"
+    DEBUG = False
+    TEMPLATE_DEBUG = True
+
+	DATABASES['default'] = {
+	        'ENGINE': 'django.db.backends.mysql',
+	        'NAME': 'django',
+	        'USER': 'travis',
+	        'PASSWORD': '',
+	        'HOST': '127.0.0.1',
+	        # 'PORT': '3306',
+	    }
+else:
+    #Non-travis DB configuration goes here
+	DATABASES['default'] = {
+	        'ENGINE': 'django.db.backends.mysql',
+	        'NAME': 'django',
+	        'USER': 'django',
+	        'PASSWORD': 'Django_passw0rd',
+	        'HOST': '127.0.0.1',
+	        'PORT': '3306',
+	    }
