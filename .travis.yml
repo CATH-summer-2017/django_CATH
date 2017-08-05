@@ -23,7 +23,7 @@ install:
   - pip install -r rootsite/tst/requirements.txt
   # - pip install -r tst/requirements.txt
 
-before script:
+before_script:
   - mysql -e 'create database django;'
   - cd rootsite
   - ./manage.py runserver &
