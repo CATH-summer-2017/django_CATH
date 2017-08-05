@@ -1,6 +1,6 @@
 #Django==1.2.*
-django-extensions==1.5.5
-#ipython==3.2.0
+django-extensions==1.6.7
+ipython==3.2.0
 mpld3==0.3
 requests==2.12.4
 #Django==1.11.3
@@ -10,3 +10,4 @@ scikit_learn==0.19b2
 mysql-python
 MySQL-python
 mysqlclient==1.3.4
+jinja2==2.7.*
