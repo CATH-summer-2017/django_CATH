@@ -13,6 +13,9 @@ django-admin startproject rootsite
 cat ../django_settings.py >> rootsite/rootsite/settings.py
 cat ../django_urls.py >> rootsite/rootsite/urls.py
 
+
+
+sudo apt-get install libmysqlclient-dev
 ### Configure sql correspondingly using django_CATH.sql
 
 #mkdir django
