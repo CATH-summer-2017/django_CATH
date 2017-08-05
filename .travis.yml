@@ -9,15 +9,24 @@ env:
     # - DJANGO_SETTINGS_MODULE="rootsite.settings"
     # - PYTHONPATH="/home/travis/build/shouldsee/django_CATH" 
 before_install:
-  # - pip install Django==1.11.*
-  - pwd
+  - pip install Django==1.11.*
+  - cp -r init ..
+  - cd ../  
+  - django-admin startproject rootsite
+  # - cat init/django_settings.py >> rootsite/rootsite/settings.py
+  # - cat init/django_urls.py >> rootsite/rootsite/urls.py
+
+  # - pwd
 
 install:
-  # - pip isnstall -r requirements.txt
+  - pip isnstall -r requirements.txt
+  - cd rootsite
   # - pip install -r tst/requirements.txt
 
 before script:
   - mysql -e 'create database travis_ci_db;'
 
 script:
+  - ./manage.py runserver
   - # do nothing;
+  # - 
