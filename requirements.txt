@@ -1,7 +1,7 @@
 Django==1.11.*
 django-extensions==1.8.*
 ipython==3.2.0
-jupyter==1.0.0
+#jupyter==1.0.0
 mpld3==0.3
 requests==2.12.4
 #Django==1.11.3

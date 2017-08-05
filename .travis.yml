@@ -6,11 +6,15 @@ services: mysql
 
 env:
   global:
-    - DJANGO_SETTINGS_MODULE="rootsite.settings"
-    - PYTHONPATH="/home/travis/build/shouldsee/django_CATH"
+    # - DJANGO_SETTINGS_MODULE="rootsite.settings"
+    # - PYTHONPATH="/home/travis/build/shouldsee/django_CATH" 
+before_install:
+  # - pip install Django==1.11.*
+  - pwd
 
 install:
-  - pip install -r requirements.txt
+  # - pip isnstall -r requirements.txt
+  # - pip install -r tst/requirements.txt
 
 before script:
   - mysql -e 'create database travis_ci_db;'
