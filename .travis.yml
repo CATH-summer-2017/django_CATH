@@ -13,8 +13,9 @@ before_install:
   - cp -r init ..
   - cd ../  
   - django-admin startproject rootsite
-  # - cat init/django_settings.py >> rootsite/rootsite/settings.py
-  # - cat init/django_urls.py >> rootsite/rootsite/urls.py
+  - cat init/django_settings.py >> rootsite/rootsite/settings.py
+  - cat init/django_urls.py >> rootsite/rootsite/urls.py
+  - git clone https://github.com/CATH-summer-2017/django_CATH.git rootsite/tst
 
   # - pwd
 
@@ -24,7 +25,7 @@ install:
   # - pip install -r tst/requirements.txt
 
 before script:
-  - mysql -e 'create database travis_ci_db;'
+  - mysql -e 'create database django;'
 
 script:
   - ./manage.py runserver
