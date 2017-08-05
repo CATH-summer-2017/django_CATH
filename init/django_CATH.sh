@@ -14,8 +14,9 @@ cat ../django_settings.py >> rootsite/rootsite/settings.py
 cat ../django_urls.py >> rootsite/rootsite/urls.py
 
 
+# sudo apt-get -qq update
+sudo apt-get install -y libmysqlclient-dev
 
-sudo apt-get install libmysqlclient-dev
 ### Configure sql correspondingly using django_CATH.sql
 
 #mkdir django
@@ -30,7 +31,8 @@ pip install -r requirements.txt
 
 cd ..
 
-./manage.py loaddata tst/cathB-0728-WithStat.json 
+./manage.py migrate
+#./manage.py loaddata --app tst cathB-0728-WithStat.json 
 
-./manage.py runserver
+./manage.py runserver 0.0.0.0:8001
 
