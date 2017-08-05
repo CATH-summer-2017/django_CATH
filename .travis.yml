@@ -1,0 +1,19 @@
+language: python
+python:
+  - "2.7"
+
+services: mysql
+
+env:
+  global:
+    - DJANGO_SETTINGS_MODULE="rootsite.settings"
+    - PYTHONPATH="/home/travis/build/shouldsee/django_CATH"
+
+install:
+  - pip install -r requirements.txt
+
+before script:
+  - mysql -e 'create database travis_ci_db;'
+
+script:
+  - ;
