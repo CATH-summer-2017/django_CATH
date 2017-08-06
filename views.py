@@ -90,7 +90,7 @@ greet_plothowto = '''
 		<br/>&nbsp; to fit to content, respectively.
 '''
 greets = {
-	"scatterplot_homsf":[
+	"scatterplot_domain":[
 		'Unnormalised scatter plot <br/>You are looking at a collection of domain structures',
 
 		'''This is a scatter plot showing the distribution of packedness within a superfamily, using un-normalised metrics. Each point represent a domain structure. 
@@ -99,7 +99,7 @@ greets = {
 		%s
 		'''%greet_plothowto,
 		],
-	"scatterplot_homsfM":[
+	"scatterplot_homsf":[
 	'Normalised scatterplot <br/> You are looking at a collcetion of homologous superfamilies',
 
 	'''This is a scatter plot showing the homogeneity of superfamilies using correlation coefficient (R) at s35 level. The more s35 contained, the more constrained is the R, and hence the higher the R-sqaured, as a result of central limit theorem. Each point represent a homologous superfamily. 
@@ -394,7 +394,7 @@ def scatterplot_qset( request, qset = None, title = None, fields = None, greet =
 			  context)
 
 
-def scatterplot_homsf(request,
+def scatterplot_domain(request,
 	# homsf_id='1.10.30.10',
 	homsf_id=None):
 	# homsf = select_homsf(homsf_id)
@@ -412,12 +412,12 @@ def scatterplot_homsf(request,
 			# 'domain_id',
 			]
 
-		greet = greets["scatterplot_homsf"]
+		greet = greets["scatterplot_domain"]
 		greet[0] += " from %s" % homsf_id 
 		kwargs = 	{
 		'title': 'superfamily %s' % homsf_id,
 		# 'greet': 'You are looking at a collection of s35_reps ',
-		# 'greet': greets["scatterplot_homsf"],
+		# 'greet': greets["scatterplot_domain"],
 		"greet": greet,
 		'subplot_kwargs':{
 			# 'xlim':[0,500],
@@ -460,7 +460,7 @@ def scatterplot_homsf(request,
 			# labels = qset.values_list('domain__domain_id',flat=True),
 		**kwargs)
 
-def scatterplot_homsfM(request, 
+def scatterplot_homsf(request, 
 	crit = {'s35_count__gt':10,}
 	):
 	# homsf = select_homsf(homsf_id)
@@ -478,7 +478,7 @@ def scatterplot_homsfM(request,
 
 	kwargs = 	{
 	'title': 'superfamily collection' ,
-	'greet': greets["scatterplot_homsfM"],
+	'greet': greets["scatterplot_homsf"],
 	# 'You are looking at a collection of %s'%qset[0].level.name,	
 	'subplot_kwargs':{
 		# 'xlim':[0,500],
