@@ -27,9 +27,9 @@ class EntryModelTest(TestCase):
 
 	# fixtures = ['c410_s35_fixed.json']
 	
-    def test_homepage(self):
-        response = self.client.get('/tst/test/')
-        # self.assertEqual(response.status_code, 200)
+	def test_homepage(self):
+		response = self.client.get('/tst/test/')
+		# self.assertEqual(response.status_code, 200)
 		assert response.status_code < 400, 'Index page not working, HTTP %d'%response.status_code
 
 
