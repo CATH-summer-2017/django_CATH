@@ -368,10 +368,10 @@ def scatterplot_qset( request, qset = None, title = None, fields = None, greet =
 	# print(subplot_kwargs,'\n\n')
 	fields_t = request.GET.get('FigFields','+'.join(fields))
 	# filter = request.GET.get('FigFilter','+'.join(filter)).split('+')
-	print(fields_t)
+	# print(fields_t)
 	# print(kwargs.has_key('subplot_kwargs'))
 	# labels = list(qset.values_list('domain__domain_id',flat=True))
-	print kwargs.keys()
+	# print kwargs.keys()
 	jdict = scatterplot_qset_dict(qset.filter(*filter), fields = fields, **kwargs)
 	jdict['success'] = True
 	jdict['errmsg'] = 'Successful'

@@ -6,6 +6,19 @@ from .models import *
 from datetime import datetime
 from django.db import connection
 from django.urls import reverse
+from django.test import Client
+
+
+# c = Client(
+#     REMOTE_ADDR='127.0.0.1:8001',
+#            HTTP_USER_AGENT='Mozilla/5.0', 
+#            HTTP_HOST='localhost',)
+
+def check_size(c, url, lim):
+    r = c.get(url)
+    l  = len(r._container[0])
+    assert l > lim , 'Webpage %s is too small, Expected: >%d, Actual: %d' %(homsf_id, lim, l)
+    print("checked %s" % url)
 
 
 def lookup(node,db_version):
@@ -37,6 +50,20 @@ class EntryModelTest(TestCase):
 		url = reverse('domain_collection',args=['1.10.60.10'])
 		response = self.client.get(url)
 		assert response.status_code >= 401
+	def size_tests(self):
+		c = self.client
+		url = reverse('scatterplot_domain', kwargs={'homsf_id':'1.10.30.10'}) 
+		check_size(c,url,30000)
+
+		url = reverse('scatterplot_domain', kwargs={'homsf_id':'1.10.30.10'}) + '?scatter=pcnorm'
+		check_size(c,url,30000)
+
+		url = reverse('scatterplot_homsf',    )
+		check_size(c,url,60000)
+
+		url = reverse('scatterplot_homsf',) 
+		check_size(c,url,60000)
+
 	# def sest_superfamily(self):
 	# 	# 1.10.3460.10	
 	# 	node = '1.10.3460.10'
