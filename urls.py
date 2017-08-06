@@ -8,6 +8,9 @@ urlpatterns = [
 
 	# ex: /tst/hello    
     url(r'^$', views.index, name='hello'),
+
+    url(r'^test/$', views.test, name='test'),
+
     # ex: /tst/5/
     # url(r'^(?P<question_id>[0-9]+)/$', 
     # 	views.detail,

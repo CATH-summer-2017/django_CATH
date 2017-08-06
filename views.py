@@ -142,6 +142,9 @@ def index(request):
 		context,
 		)
 
+def test(request):
+	return HttpResponse("this is a test page")
+
 def redirect(request, url):
 	# abs_url = request.path ### this is temporary
 
