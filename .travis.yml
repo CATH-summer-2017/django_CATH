@@ -33,6 +33,6 @@ before_script:
 script:
   - # do nothing;
   - # wget http://localhost:8001/tst/domain/
-  - wget http://localhost:8001/tst/test/
+  # - wget http://localhost:8001/tst/test/
   - ./manage.py test tst
   # - 
