@@ -108,11 +108,17 @@ class EntryModelTest(TestCase):
 	# 	# print('HTTP %d')
 	# 	assert response.status_code < 400, 'Index page not working, HTTP %d'%response.status_code
 
-	def test_domain_template(self):
+	def test_domain_homepage(self):
 		response = self.client.get('/tst/domain/')
 		request = response.wsgi_request
 		print(request)
 		assert response.status_code < 400, 'Default domain collection PAGE not reachable, HTTP %d'%response.status_code
+
+	def test_superfamily_homepage(self):
+		response = self.client.get('/tst/superfamily/')
+		request = response.wsgi_request
+		print(request)
+		assert response.status_code < 400, 'Default superfamily collection PAGE not reachable, HTTP %d'%response.status_code
 
 	# Class = models.IntegerField(default=None)
 	# arch = models.IntegerField(default=None)
