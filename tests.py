@@ -34,7 +34,7 @@ class EntryModelTest(TestCase):
 		assert response.status_code < 400, 'Index page not working, HTTP %d'%response.status_code
 
 	def test_domain(self):
-		url = reverse('domain_collection',args=['1.3.4.5'])
+		url = reverse('domain_collection',args=['1.10.60.10'])
 		response = self.client.get(url)
 		assert response.status_code >= 401
 	# def sest_superfamily(self):
