@@ -28,7 +28,7 @@ before_script:
   - mysql -e 'create database django; grant all privileges on django.* to 'travis'@'localhost';'
   - mysql -e 'create database test_django; grant all privileges on test_django.* to 'travis'@'localhost';'
   - cd rootsite
-  # - ./manage.py migrate tst 
+  - ./manage.py migrate tst 
   - ./manage.py runserver 127.0.0.0:8001 &
 
 script:
