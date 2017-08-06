@@ -40,22 +40,29 @@ def lookup(node,db_version):
 class EntryModelTest(TestCase):
 
 	# fixtures = ['c410_s35_fixed.json']
-	
+	fixtures = [
+	'test2000'
+	]
 	def test_homepage(self):
 		response = self.client.get('/tst/test/')
 		# self.assertEqual(response.status_code, 200)
 		assert response.status_code < 400, 'Index page not working, HTTP %d'%response.status_code
 
 	def test_domain(self):
-		url = reverse('domain_collection',args=['1.10.60.10'])
+		expdom = '1.10.8.20'
+
+		url = reverse('domain_collection',args=[expdom])
 		response = self.client.get(url)
-		assert response.status_code >= 401
+		assert response.status_code >= 401,'%s returned %d'%(url,response.status_code)
+
 	def size_tests(self):
+		expdom = '1.10.8.20'
+
 		c = self.client
-		url = reverse('scatterplot_domain', kwargs={'homsf_id':'1.10.30.10'}) 
+		url = reverse('scatterplot_domain', kwargs={'homsf_id':expdom}) 
 		check_size(c,url,30000)
 
-		url = reverse('scatterplot_domain', kwargs={'homsf_id':'1.10.30.10'}) + '?scatter=pcnorm'
+		url = reverse('scatterplot_domain', kwargs={'homsf_id':expdom}) + '?scatter=pcnorm'
 		check_size(c,url,30000)
 
 		url = reverse('scatterplot_homsf',    )
