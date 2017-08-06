@@ -15,26 +15,29 @@ def select_homsf(sc):
 
 
 # s0 = StringIO.StringIO();
-def preprocess(sfname="2.40.50.140"):
-    homsf = select_homsf(sfname);
-
-    xs = [];
-    ys = [];
-    y2s= [];
-    lbls =[];
 
 
-    for d in homsf.classification_set.all():      
-        d = d.domain
-        vals = get_something( str(d.domain_id),env,s0=s0)
-        x = vals['nbpair_count']
-        y = vals['DOPE']
-        xs += [x];
-        ys += [y];
-        y2s+= [d.domain_length]
-        lbls+=[d.domain_id];
+### !!! DEPRECATED: Old visualisation routine !!!
+# def preprocess(sfname="2.40.50.140"):
+#     homsf = select_homsf(sfname);
 
-    return (np.array(xs),np.array(ys),np.array(y2s),lbls)
+#     xs = [];
+#     ys = [];
+#     y2s= [];
+#     lbls =[];
+
+
+#     for d in homsf.classification_set.all():      
+#         d = d.domain
+#         vals = get_something( str(d.domain_id),env,s0=s0)
+#         x = vals['nbpair_count']
+#         y = vals['DOPE']
+#         xs += [x];
+#         ys += [y];
+#         y2s+= [d.domain_length]
+#         lbls+=[d.domain_id];
+
+#     return (np.array(xs),np.array(ys),np.array(y2s),lbls)
     
 #### The ACTUAL functoinal scripts!!!
 # import matplotlib as mpl

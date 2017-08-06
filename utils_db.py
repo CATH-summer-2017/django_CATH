@@ -1,7 +1,6 @@
 from .models import *
 from domutil.util import *
 # from utils import *
-from modeller import *
 import numpy as np 
 from django.db import transaction
 
@@ -19,40 +18,46 @@ def verify_version(ver):
     return v
 
 
-### Modeller initialisation
-def	init_env(env=None):
+### Do not import during test
+if settings.TESTING:
+    pass
+else:
+    from domutil.pdbutil import *
+    from modeller import *
+    ### Modeller initialisation
+    def	init_env(env=None):
 
-	with stdoutIO() as s:	
-		env = environ()
-		#env.io.atom_files_directory = ['../atom_files']
-		env.io.atom_files_directory = ['../pdbs','$(PDBlib)/',
-		'$(repos)/cathdb/dompdb/',
-        '$(repos)/cathdb/temppdbs/',
-		]
-		env.libs.topology.read(file='$(LIB)/top_heav.lib')
-		env.libs.parameters.read(file='$(LIB)/par.lib')
-	return env
-	
-### Fill structure-based stats
-def domain_stat_null(d):
-	dstat = domain_stat(domain = d);
-	dstat.save()
-	return dstat
-	# if d.domain_stat == None:
+    	with stdoutIO() as s:	
+    		env = environ()
+    		#env.io.atom_files_directory = ['../atom_files']
+    		env.io.atom_files_directory = ['../pdbs','$(PDBlib)/',
+    		'$(repos)/cathdb/dompdb/',
+            '$(repos)/cathdb/temppdbs/',
+    		]
+    		env.libs.topology.read(file='$(LIB)/top_heav.lib')
+    		env.libs.parameters.read(file='$(LIB)/par.lib')
+    	return env
+    	
+    ### Fill structure-based stats
+    def domain_stat_null(d):
+    	dstat = domain_stat(domain = d);
+    	dstat.save()
+    	return dstat
+    	# if d.domain_stat == None:
 
-def domain_stat_fill( d, **kwargs):
-	 try:
-	 	dstat = d.domain_stat
-	 except:
-	 	dstat = domain_stat_null(d);
+    def domain_stat_fill( d, **kwargs):
+    	 try:
+    	 	dstat = d.domain_stat
+    	 except:
+    	 	dstat = domain_stat_null(d);
 
-	 outdict = get_something( str(d.domain_id) , **kwargs)
+    	 outdict = get_something( str(d.domain_id) , **kwargs)
 
-	 for k,v in outdict.iteritems():
-	 	if hasattr(dstat,k):
-	 		setattr(dstat, k, v)
-	 dstat.save()
-	 return d
+    	 for k,v in outdict.iteritems():
+    	 	if hasattr(dstat,k):
+    	 		setattr(dstat, k, v)
+    	 dstat.save()
+    	 return d
 
 ##### !!!!! DEPRECATED !!!!!! 
 def homsf_stat_fill(h):

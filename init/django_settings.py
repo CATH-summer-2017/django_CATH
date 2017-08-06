@@ -1,4 +1,7 @@
 
+import sys
+TESTING = len(sys.argv) > 1 and sys.argv[1] == 'test'
+
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'GB'
 USE_I18N = True
