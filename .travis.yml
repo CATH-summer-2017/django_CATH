@@ -25,6 +25,7 @@ install:
 
 before_script:
   - mysql -e 'create database django;'
+  - mysql -e 'grant all privileges on django.* to 'travis'@'localhost';'
   - cd rootsite
   - ./manage.py migrate tst 
   - ./manage.py runserver 127.0.0.0:8001 &
