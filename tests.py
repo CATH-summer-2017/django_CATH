@@ -15,10 +15,17 @@ from django.test import Client
 #            HTTP_HOST='localhost',)
 
 def check_size(c, url, lim):
-    r = c.get(url)
-    l  = len(r._container[0])
-    assert l > lim , 'Webpage %s is too small, Expected: >%d, Actual: %d' %(homsf_id, lim, l)
-    print("checked %s" % url)
+
+	r = c.get(url)
+	l  = len(r._container[0])
+	if lim > 0:
+		assert l >= lim , 'Webpage %s is too small, Expected: >%d, Actual: %d' %(url, lim, l)
+	else:
+		lim = - lim
+		assert l < lim , 'Webpage %s is too big, Expected: >%d, Actual: %d' %(url, lim, l)
+
+	print("checked %s" % url)
+	return(l)
 
 
 def lookup(node,db_version):
@@ -49,11 +56,19 @@ class EntryModelTest(TestCase):
 		assert response.status_code < 400, 'Index page not working, HTTP %d'%response.status_code
 
 	def test_domain(self):
-		expdom = '1.10.8.20'
+		c = self.client
 
+		expdom = '1.10.8.20'
 		url = reverse('domain_collection',args=[expdom])
 		response = self.client.get(url)
-		assert response.status_code >= 401,'%s returned %d'%(url,response.status_code)
+		l1 = check_size(c,url,20000)
+
+		expdom = '4.3.2.1'
+		url = reverse('domain_collection',args=[expdom])
+		response = self.client.get(url)
+		l2 = check_size(c,url,0001)
+		assert l2<l1-1000,'empty page is not smaller than filled page'
+		# assert response.status_code >= 401,'%s returned %d'%(url,response.status_code)
 
 	def size_tests(self):
 		expdom = '1.10.8.20'
