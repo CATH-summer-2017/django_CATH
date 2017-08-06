@@ -14,6 +14,17 @@ from django.templatetags.static import static
 
 from CATH_API.lib import *
 
+levels=[ None,
+'root',
+'Class',
+'arch',
+'topo',
+'homsf',
+'s35',
+'s60',
+'s95',
+'s100'];
+
 class homsf_manager(models.Manager):
 	def get_queryset(self):
 		homsf_qset = super(homsf_manager, self).get_queryset().filter(level_id=5);
@@ -29,16 +40,7 @@ class homsf_manager(models.Manager):
 class node_manager(models.Manager):
 
 	def get_bytree(self, node_str, qnode = None):
-		levels=[ None,
-		'root',
-		'Class',
-		'arch',
-		'topo',
-		'homsf',
-		's35',
-		's60',
-		's95',
-		's100'];
+
 
 		lst = [int(x) for x in node_str.split('.')]
 		if lst[-1]:
@@ -117,15 +119,16 @@ class level(models.Model):
 
 class classification(models.Model):	
 	# homsf_ID = models.CharField(max_length=7, primary_key=True)
+	dft = 0
 
-	Class = models.IntegerField(default=None,null=True,db_index=True)
-	arch = models.IntegerField(default=None,null=True,db_index=True)
-	topo = models.IntegerField(default=None,null=True,db_index=True)
-	homsf = models.IntegerField(default=None,null=True,db_index=True)
-	s35 = models.IntegerField(default=None,null=True,db_index=True)
-	s60 = models.IntegerField(default=None,null=True)
-	s95 = models.IntegerField(default=None,null=True)
-	s100 = models.IntegerField(default=None,null=True)
+	Class = models.IntegerField(default=dft,null=True,db_index=True)
+	arch = models.IntegerField(default=dft,null=True,db_index=True)
+	topo = models.IntegerField(default=dft,null=True,db_index=True)
+	homsf = models.IntegerField(default=dft,null=True,db_index=True)
+	s35 = models.IntegerField(default=dft,null=True,db_index=True)
+	s60 = models.IntegerField(default=dft,null=True)
+	s95 = models.IntegerField(default=dft,null=True)
+	s100 = models.IntegerField(default=dft,null=True)
 	version =  models.ForeignKey(version, on_delete= models.CASCADE);
 	level = models.ForeignKey(level,  on_delete=models.CASCADE)
 	parent = models.ForeignKey("self", default=None,null=True, on_delete=models.CASCADE)
@@ -218,21 +221,21 @@ class domain(models.Model):
 		except Exception as e:
 			c = None
 			# print(e)
-		return int(c)
+		return (c)
 	def nbpair_count(self):
 		try: 
 			c = self.domain_stat.nbpair_count
 		except Exception as e:
 			c = None
 			# print(e)
-		return int(c)
+		return (c)
 	def atom_count(self):
 		try: 
 			c = self.domain_stat.atom_count
 		except Exception as e:
 			c = None
 			# print(e)
-		return int(c)
+		return (c)
 	
 	# class_id = models.IntegerField(default=0)
 	# node = models.CharField(default=None)
