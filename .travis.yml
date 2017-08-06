@@ -26,9 +26,10 @@ install:
 before_script:
   - mysql -e 'create database django;'
   - cd rootsite
-  - ./manage.py runserver &
+  - ./manage.py runserver 127.0.0.0:8001 &
 
 script:
   - # do nothing;
-  - wget http://localhost:8000/tst/domain/
+  - # wget http://localhost:8001/tst/domain/
+  - wget http://localhost:8001/tst/test/
   # - 
