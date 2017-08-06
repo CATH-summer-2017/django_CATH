@@ -35,5 +35,5 @@ script:
   - # do nothing;
   - # wget http://localhost:8001/tst/domain/
   # - wget http://localhost:8001/tst/test/
-  - ./manage.py test tst
+  - ./manage.py test tst --keepdb
   # - 
