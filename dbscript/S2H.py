@@ -1,7 +1,9 @@
 from tst.utils_db import *
 from time import time
 
-v_curr = verify_version('putative')
+# v_curr = verify_version('putative')
+v_curr = verify_version('test')
+
 
 #### Calculate superfamily-based statistics
 

@@ -27,13 +27,39 @@ levels=[ None,
 
 @contextlib.contextmanager
 def stdoutIO(stdout=None):
-	old = sys.stdout
+	oldout = sys.stdout
+	olderr = sys.stderr
 	if stdout is None:
 		stdout = StringIO.StringIO()
 	sys.stdout = stdout
+	sys.stderr = stdout
 	yield stdout
-	sys.stdout = old
+	sys.stdout = oldout
+	sys.stderr = olderr
 
+
+import urllib2
+def get_gzip(url = 'http://download.cathdb.info/cath/releases/daily-release/newest/cath-b-s35-newest.gz'):
+
+# putative_s35_url = 'http://download.cathdb.info/cath/releases/daily-release/newest/cath-b-s35-newest.gz'
+# url = 'http://download.cathdb.info/cath/releases/daily-release/newest/cath-b-s35-newest.gz'
+    request = urllib2.Request( url)
+    response = urllib2.urlopen(request)
+    request.add_header('Accept-encoding', 'gzip')
+    request.add_header('Accept-encoding', 'gz')
+    response = urllib2.urlopen(request)
+    if response.info().get('content-type') == 'application/x-gzip':
+#     if 1:
+        buf = StringIO.StringIO(response.read())
+        f = gzip.GzipFile(fileobj=buf)
+        data = f.read()# len(f)
+    else:
+        data = response.read()
+    # type(f)
+    # help(f)
+    # lines = data.splitlines()
+    mapdict = {}
+    return data
 
 class counter():
     def __init__(self, lst, per = 100):
@@ -43,7 +69,7 @@ class counter():
         self.per = per
     def count(self):
         if not self.i % self.per:
-            print('%d of %d'%(self.i,self.imax))
+            print >> sys.__stdout__,'%d of %d'%(self.i,self.imax)
         self.i += 1
 
 
