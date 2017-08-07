@@ -6,7 +6,7 @@ services: mysql
 
 env:
   global:
-    - PDBlib="/home/travis/build/shouldsee/rootsite/django_CATH/static/temppdbs"
+    - PDBlib="/home/travis/build/shouldsee/rootsite/tst/static/temppdbs"
     # - DJANGO_SETTINGS_MODULE="rootsite.settings"
     # - PYTHONPATH="/home/travis/build/shouldsee/django_CATH" 
 before_install:
