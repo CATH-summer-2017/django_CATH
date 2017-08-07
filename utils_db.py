@@ -3,6 +3,7 @@ from domutil.util import *
 # from utils import *
 import numpy as np 
 from django.db import transaction
+import os 
 
 def verify_version(ver):
     #### Check whether this version is recorded in 'version' table
@@ -51,7 +52,14 @@ else:
     	 except:
     	 	dstat = domain_stat_null(d);
 
-    	 outdict = get_something( str(d.domain_id) , **kwargs)
+        if settings.USE_MODELLER:
+        ### Using modeller
+        	 outdict = get_something( str(d.domain_id) , **kwargs)
+        else:
+         ### Using biopython to parse
+             struct = parse_PDB(str(d.domain_id),**kwargs)
+             outdict = get_something( struct , **kwargs)
+
 
     	 for k,v in outdict.iteritems():
     	 	if hasattr(dstat,k):

@@ -14,3 +14,4 @@ scikit_learn==0.19b2
 mysqlclient==1.3.4
 jinja2==2.7.*
 scipy==0.19.*
+biopython
