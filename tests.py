@@ -85,14 +85,14 @@ class EntryModelTest(TestCase):
 		assert l2<l1-1000,'empty page is not smaller than filled page'
 		# assert response.status_code >= 401,'%s returned %d'%(url,response.status_code)
 
-	def test_scatterdoamin_home(self):
+	def test_scatterdoamin_default(self):
 
 		c = self.client
-		url = reverse('scatterplot_domain', kwargs={}) 
+		url = reverse('scatterplot_domain_default', kwargs={}) 
 		check_size(c,url,28000)
 		url += '?scatter=pcnorm'
 		check_size(c,url,28000)
-		
+
 	def test_scatterdoamin_raw(self):
 
 		expdom = '2.30.39.10'
