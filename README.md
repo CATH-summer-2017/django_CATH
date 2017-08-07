@@ -65,7 +65,7 @@ cd rootsite
 ./manage.py dumpdata tst -o tst/fixtures/test_temp.json #### dump the database to be used in the test
 ./manage.py test tst --keepdb    #### run unittests
 
-./manage.py runserver 127.0.0.0:8001 &   #### just testing the functionality of the server
+./manage.py runserver 0.0.0.0:8001 &   #### just testing the functionality of the server
 ```
 
 Usage
