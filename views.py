@@ -402,7 +402,7 @@ def scatterplot_domain(request,
 	scatter = request.GET.get('scatter','raw')
 
 	qset = homsf2domain(homsf_id)
-
+	qset = qset.exclude(domain_stat__isnull = True)
 	if scatter == 'raw':
 		fields  = [
 			# 'domain__domain_stat__res_count',
@@ -507,7 +507,7 @@ def scatterplot_domain_maha(request):
 	# qset = domain.objects.all()#
 	# qset = domain.objects.order_by('-domain_stat__maha_dist')[:1000]#
 	qset = classification.objects.order_by('-domain__domain_stat__maha_dist')[:1000]#
-
+	qset = qset.exclude(domain__domain_stat__isnull = True)
 
 	# fields = [
 	# 	# 'classification__parent__node_stat__Rsq_NBcount_Acount',

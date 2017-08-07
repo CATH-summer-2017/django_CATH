@@ -90,18 +90,18 @@ class EntryModelTest(TestCase):
 		expdom = '2.30.39.10'
 		c = self.client
 		url = reverse('scatterplot_domain', kwargs={'homsf_id':expdom}) 
-		check_size(c,url,30000)
+		check_size(c,url,28000)
 
 	def test_scatterdomain_pcnorm(self):
 		expdom = '2.30.39.10'
 		c = self.client
 		url = reverse('scatterplot_domain', kwargs={'homsf_id':expdom}) + '?scatter=pcnorm'
-		check_size(c,url,30000)
+		check_size(c,url,28000)
 
 	def test_scatterhomsf_raw(self):	
 		c = self.client
 		url = reverse('scatterplot_homsf',    )
-		check_size(c,url,60000)
+		check_size(c,url,26900)
 
 		# url = reverse('scatterplot_homsf',) 
 		# check_size(c,url,60000)
