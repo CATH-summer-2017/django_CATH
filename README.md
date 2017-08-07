@@ -15,6 +15,9 @@ Install Django with
 ```sh
 pip install Django==1.11.* --user
 ```
+Compatibility
+-----
+Python: 2.7.0
 
 Installation
 ------
@@ -38,12 +41,18 @@ Update the config for rootsite by appending with those in ```init/```. This shou
 cp rootsite/tst/init . -r
 cat init/django_settings.py >> rootsite/rootsite/settings.py
 cat init/django_urls.py >> rootsite/rootsite/urls.py
-rm init
+rm init -rf
 ```
 and remember to grant access to your specified user "django"
-```sh
+```sh 
+#### run commands with appropriate --user and --password
 mysql -e 'create database django; grant all privileges on django.* to 'django'@'localhost';'
 mysql -e 'create database test_django; grant all privileges on test_django.* to 'django'@'localhost';'
+```
+
+1. Finally, install dependencies with:
+```
+pip install -r rootsite/tst/requirements.txt
 ```
 
 1. Test your installation with:
