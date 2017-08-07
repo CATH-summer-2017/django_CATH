@@ -108,7 +108,9 @@ if USE_MODELLER:
 			 "res_count":  int(p_resCount.findall(s0buf)[0]),
 			  }
 		return outdict
-
+else:
+	def get_something_modeller( pdbfile, env = None, auto_complete = False, s0 = None, **kwargs):
+		assert False, "'get_something_modeller()' is not defined!"
 
 def get_nDOPE( pdbfile, env = None, auto_complete = False, **kwargs):
 # pdbfile = "4xz8A_chop"
