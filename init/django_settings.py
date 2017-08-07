@@ -38,12 +38,22 @@ if os.getenv('TRAVIS', None):
 			# 'PORT': '3306',
 		}
 else:
-	#Non-travis DB configuration goes here
-	DATABASES['default'] = {
-			'ENGINE': 'django.db.backends.mysql',
-			'NAME': 'django',
-			'USER': 'django',
-			'PASSWORD': 'Django_passw0rd',
-			'HOST': '127.0.0.1',
-			'PORT': '3306',
-		}
+    #Non-travis DB configuration goes here
+    ### Please edit to fit your database config!
+    DATABASES['default'] = {
+            'ENGINE': 'django.db.backends.mysql',
+            # 'NAME': 'mtest_django',  #### This is for manual testing
+            'NAME': 'django',
+            
+            'USER': 'django',
+            'PASSWORD': 'Django_passw0rd',
+            'HOST': '127.0.0.1',
+            'PORT': '3306',
+        }        
+
+
+ALLOWED_HOSTS += [
+'testserver',
+'localhost',
+'127.0.0.1',
+]
