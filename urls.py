@@ -68,7 +68,7 @@ urlpatterns = [
     # url(r'^superfamily/figure$', views.scatterplot_homsfM,name='fig_nbscatter'),
     url(r'^figure/tst/superfamily/id/(?P<homsf_id>[\d,\.]+)/$', views.scatterplot_domain,name='scatterplot_domain'),
     url(r'^figure/tst/superfamily/$', views.scatterplot_homsf,name='scatterplot_homsf'),
-    url(r'^figure/tst/domain/$', views.scatterplot_domain,name='scatterplot_domain'),
+    url(r'^figure/tst/domain/$', views.scatterplot_domain,name='scatterplot_domain_default'),
    
     url(r'^figure(?P<url>.*)$',views.redirect,name='figure_reverse'),### WTF do I need this handler???????
 
