@@ -49,6 +49,11 @@ mysql -e 'create database django; grant all privileges on django.* to 'django'@'
 mysql -e 'create database test_django; grant all privileges on test_django.* to 'django'@'localhost';'
 ```
 
+1. Finally, install dependencies with:
+```
+pip install -r rootsite/tst/requirements.txt
+```
+
 1. Test your installation with:
 ```sh
 cd rootsite
