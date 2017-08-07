@@ -13,7 +13,9 @@ def parse_PDB(pdbname,pdbdir=None,parser = None):
 		else:
 			os.environ['$PDBlib'] = './'
 			pdbdir = '$PDBlib/'
-	pdbfile = os.path.expandvar(pdbdir) + pdbname
+	pdbfile = os.path.expandvars(pdbdir) + pdbname
+	# print os.path.isfile(pdbfile)
+	# assert os.path.isfile(pdbfile), "Cannot open PDB file at %s" % pdbfile
 	
 	if not parser:
 		parser = PDBParser()
@@ -21,23 +23,36 @@ def parse_PDB(pdbname,pdbdir=None,parser = None):
 
 	return struct
 
-def get_something(pdbname, env = None, auto_complete = False, s0 = None, pdbdir = None, cutout=15.0,cutin=3.5):
-
-	struct = parse_PDB(pdbname)
-	# struct = p.get_structure('X', pdbfile)
+def get_something(input, env = None, auto_complete = False, s0 = None, pdbdir = None, cutout=15.0,cutin=3.5,
+	 **kwargs):
+	if isinstance(input,Structure.Structure):
+		struct = input
+	else:
+		with stdoutIO(s0) as s:
+			pdbname = input
+			struct = parse_PDB(pdbname, **kwargs)
+		# struct = p.get_structure('X', pdbfile)
 	alst = list(struct.get_atoms())
+	acount = len(alst)
 	rcount = sum( 1 for _ in struct.get_residues())
 	nbpair_count = (
 	len( NeighborSearch(alst ).search_all(radius =cutout))  
 	-  len( NeighborSearch(alst ).search_all(radius =cutin)) 
 	)
 
+	### For some weird reasons, many structures are not correctly parsed by Biopython, (but Okay with modeller)
+	### This is a temporary patch to detect overlapping
+	if acount > rcount * 11:
+		acount /= 2
+		nbpair_count /= 4
+
 	outdict = {"nDOPE":0,
 		"DOPE": 0,
 		"nbpair_count":nbpair_count,
-		"atom_count": len(alst),
+		"atom_count": acount,
 		 "res_count": rcount,
 		  }
+	return outdict
 
 
 # if django.settings
@@ -50,7 +65,20 @@ if USE_MODELLER:
 	from modeller import *
 	from modeller.scripts import complete_pdb
 
-	def get_something( pdbfile, env = None, auto_complete = False, s0 = None):
+	def	init_env(env=None):
+
+		with stdoutIO() as s:	
+			env = environ()
+			#env.io.atom_files_directory = ['../atom_files']
+			env.io.atom_files_directory = ['../pdbs','$(PDBlib)/',
+			'$(repos)/cathdb/dompdb/',
+			'$(repos)/cathdb/temppdbs/',
+			]
+			env.libs.topology.read(file='$(LIB)/top_heav.lib')
+			env.libs.parameters.read(file='$(LIB)/par.lib')
+		return env	
+
+	def get_something_modeller( pdbfile, env = None, auto_complete = False, s0 = None, **kwargs):
 		if not env:
 			env = environ()
 			#env.io.atom_files_directory = ['../atom_files']
