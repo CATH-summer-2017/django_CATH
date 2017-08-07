@@ -46,7 +46,7 @@ print '%d instances of %d failed' % (failcount,c.imax)
 print('Ended after %.4f' % (time()-t0))  # len(lst)d
 
 failrate = failcount/float(c.imax) 
-assert failrate < 0.1,'fail rate is too high: expected < 10%, actual: %2.2f%%' % failrate
+assert failrate < 0.1, 'fail rate is too high: expected < 10%%, actual: %2.2f%%' % failrate
 
 # homsf_stat_fill(lst[0])
 # print(str(lst[0]))
