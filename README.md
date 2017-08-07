@@ -15,6 +15,9 @@ Install Django with
 ```sh
 pip install Django==1.11.* --user
 ```
+Compatibility
+-----
+Python: 2.7.0
 
 Installation
 ------
