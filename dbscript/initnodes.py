@@ -41,4 +41,4 @@ failrate = failcount/float(c.imax)
 
 print "%d nodes in conflict" % confcount
 assert failrate < 0.1, 'fail rate is too high: expected < 10%%, actual: %2.2f%%' % failrate
-print('Ended after %.4f' % (time()-t0))  # len(lst)d
+print('Ended after %.4f sec' % (time()-t0))  # len(lst)d
