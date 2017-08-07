@@ -3,7 +3,9 @@ from domutil.util import *
 # from utils import *
 import numpy as np 
 from django.db import transaction
-import os 
+import os ,sys
+
+from django.conf import settings
 
 def verify_version(ver):
     #### Check whether this version is recorded in 'version' table
@@ -19,53 +21,49 @@ def verify_version(ver):
     return v
 
 
+
+### Fill structure-based stats
+def domain_stat_null(d):
+    dstat = domain_stat(domain = d);
+    dstat.save()
+    return dstat
+    # if d.domain_stat == None:
+
 ### Do not import during test
-if settings.TESTING:
-    pass
-else:
+# if int(settings.TESTING):
+#     pass
+# else:
+if 1:
     from domutil.pdbutil import *
-    from modeller import *
-    ### Modeller initialisation
-    def	init_env(env=None):
-
-    	with stdoutIO() as s:	
-    		env = environ()
-    		#env.io.atom_files_directory = ['../atom_files']
-    		env.io.atom_files_directory = ['../pdbs','$(PDBlib)/',
-    		'$(repos)/cathdb/dompdb/',
-            '$(repos)/cathdb/temppdbs/',
-    		]
-    		env.libs.topology.read(file='$(LIB)/top_heav.lib')
-    		env.libs.parameters.read(file='$(LIB)/par.lib')
-    	return env
-    	
-    ### Fill structure-based stats
-    def domain_stat_null(d):
-    	dstat = domain_stat(domain = d);
-    	dstat.save()
-    	return dstat
-    	# if d.domain_stat == None:
-
     def domain_stat_fill( d, **kwargs):
-    	 try:
-    	 	dstat = d.domain_stat
-    	 except:
-    	 	dstat = domain_stat_null(d);
-
+        
         if settings.USE_MODELLER:
         ### Using modeller
-        	 outdict = get_something( str(d.domain_id) , **kwargs)
+            outdict = get_something_modeller( str(d.domain_id) , **kwargs)
         else:
-         ### Using biopython to parse
-             struct = parse_PDB(str(d.domain_id),**kwargs)
-             outdict = get_something( struct , **kwargs)
+            ### Using biopython to parse
+            struct = parse_PDB(str(d.domain_id),**kwargs)
+            outdict = get_something( struct , **kwargs)
+
+        try:
+            dstat = d.domain_stat
+        except:
+            dstat = domain_stat_null(d);
 
 
-    	 for k,v in outdict.iteritems():
-    	 	if hasattr(dstat,k):
-    	 		setattr(dstat, k, v)
-    	 dstat.save()
-    	 return d
+        for k,v in outdict.iteritems():
+            if hasattr(dstat,k):
+                setattr(dstat, k, v)
+        dstat.save()
+        return d
+
+
+    # from modeller import *
+    ### Modeller initialisation
+
+    	
+
+
 
 ##### !!!!! DEPRECATED !!!!!! 
 def homsf_stat_fill(h):
@@ -93,6 +91,7 @@ def homsf_stat_fill(h):
     #     hset.domain
         l = hset.values_list('Acount','Rcount','NBcount')
         a = np.array(l)
+        print >>sys.__stdout__,sum(np.isnan(a).flat)
     #     C = np.cov(a[:,0],a[:,1],a[:,2])
         c = np.cov(a.T)
         C = cov2corr(c); ## utils.cov2corr
@@ -142,6 +141,7 @@ def homsf_stat_fill(h):
 
 
     ### Compute statistics only if the set is larger than 10
+    hset = hset.exclude(domain__domain_stat__isnull=True)
     if hset.count() > 10:
         hset = hset.annotate(Acount=Avg("domain__domain_stat__atom_count"))
         hset = hset.annotate(Rcount=Avg("domain__domain_stat__res_count"))
@@ -212,3 +212,108 @@ def homsf_stat_fill(h):
         print 'failed for ', str(e)
         return 0
 
+
+
+from copy import copy
+def route_to_node(node_start, node_end, v):
+    node = node_start
+    lv = node.level.id
+    lst = [int(x) for x in node_end.split('.')]
+    lst = [0,1,] + lst
+    while lv != len(lst)-1:           
+        lv += 1           
+        ndict = node.node_dict()
+        ndict[levels[lv]] = lst[lv]
+        node = classification.objects.create(level_id = lv,
+                                             version = v,
+                                             parent = node,
+                                             **ndict)
+        node.save()
+    # print levels
+    return node
+       
+##### Custom function !!!
+def parse_domain(line, v = verify_version('test') ):
+#     global cc
+#     ### verify version
+#     ver = 'putative'
+#     v = verify_version(ver)
+    
+    lst = line.split()
+    domain_id = lst[0]
+    homsf_str = lst[1]    
+    chopping = lst[2]
+    
+ 
+    #### Check whether this node exists in 'classification' table
+#     (node,success) = classification.objects.get_bytree(node_str)
+    (node,success) = classification.objects.get_bytree(homsf_str)
+    
+    ### recursively  create new superfamily if not existing
+#     print(levels)
+    if not success: 
+        node = route_to_node( node, homsf_str, v)
+#         lv = node.level.id
+#         lst = [int(x) for x in homsf_str.split('.')]
+#         lst = [0,0] + lst
+#         while lv != len(lst)-1:           
+#             lv += 1           
+#             ndict = node.node_dict()
+#             ndict[levels[lv]] = lst[lv]
+#             node = classification.objects.create(level_id = lv,
+#                                                  version = v,
+#                                                  parent = node,
+#                                                  **ndict)
+#             node.save()
+            
+#             print('created %s for %s'%(str(node),homsf_str))
+#         cc+=1
+            
+    ####
+    conflict = 0
+    
+    try:
+        d = node.domain
+        check = 1
+    except:
+        d = domain.objects.create(classification = node,
+                                 domain_id = domain_id,)
+        d.save()
+        check = 0
+
+    if check:
+        # if str(node) in mapdict.keys():
+            # pass
+        if d.domain_id != domain_id:
+            conflict = 1
+            
+            
+            node = copy(node);
+            node.pk = None
+
+            lv = node.level.id
+            setattr(node, levels[lv],
+                    max( node.parent.classification_set.values_list( levels[lv],flat = True ) )+1
+                   )
+            node.version = v
+            node.save()
+
+            d = domain.objects.create(classification = node,
+                                 domain_id = domain_id)
+            d.save()
+
+        else:
+            pass
+
+    return([node,conflict])
+    
+        
+        
+    #### if superfamily exists, check whether domain_id agreed
+    conflict = 0;
+#     print(homsf,homsf_str,success)#     print(line)
+
+    if success:
+        pass
+
+    #### Otherwise, write conflict to file
