@@ -16,26 +16,26 @@ print("%s for %s from verion: %s" % (behave, url, v_curr.name))
 confcount = 0
 
 
-        
+		
 
 data = get_gzip(url)
 mapdict = {}
 
 failcount = 0
 with transaction.atomic():
-#     cc=0
-    lines = data.splitlines()[:2000]
-    c = counter(lines, per = 1000)
-    for line in lines:
-    	try:
-	        n,conf = parse_domain(line, v_curr)
-	        confcount += conf
-	    except:
-	    	failcount += 1
-        c.count()
-    #     pass
-    #     print(line)
-        pass
+#	 cc=0
+	lines = data.splitlines()[:2000]
+	c = counter(lines, per = 1000)
+	for line in lines:
+		try:
+			n,conf = parse_domain(line, v_curr)
+			confcount += conf
+		except:
+			failcount += 1
+		c.count()
+	#	 pass
+	#	 print(line)
+		pass
 
 failrate = failcount/float(c.imax) 
 
