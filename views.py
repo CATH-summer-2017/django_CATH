@@ -412,7 +412,7 @@ def scatterplot_domain(request,
 			# 'domain_id',
 			]
 
-		greet = greets["scatterplot_domain"]
+		greet = greets["scatterplot_domain"][:]
 		greet[0] += " from %s" % homsf_id 
 		kwargs = 	{
 		'title': 'superfamily %s' % homsf_id,
