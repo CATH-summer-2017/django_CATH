@@ -24,7 +24,7 @@ def check_size(c, url, lim):
 		lim = - lim
 		assert l < lim , 'Webpage %s is too big, Expected: >%d, Actual: %d' %(url, lim, l)
 
-	print("checked %s" % url)
+	print("checked %s, status code:%d" % (url, r.status_code))
 	return(l)
 
 
@@ -46,7 +46,7 @@ def lookup(node,db_version):
 # Create your tests here.
 class EntryModelTest(TestCase):
 
-	# fixtures = ['c410_s35_fixed.json']
+	# fixtures = ['c410_s35_fixed.json']y 
 	fixtures = [
 	'test2000'
 	]
@@ -54,6 +54,18 @@ class EntryModelTest(TestCase):
 		response = self.client.get('/tst/test/')
 		# self.assertEqual(response.status_code, 200)
 		assert response.status_code < 400, 'Index page not working, HTTP %d'%response.status_code
+
+	def test_domain_homepage(self):
+		response = self.client.get('/tst/domain/')
+		request = response.wsgi_request
+		print(request)
+		assert response.status_code < 400, 'Default domain collection PAGE not reachable, HTTP %d'%response.status_code
+
+	def test_superfamily_homepage(self):
+		response = self.client.get('/tst/superfamily/')
+		request = response.wsgi_request
+		print(request)
+		assert response.status_code < 400, 'Default superfamily collection PAGE not reachable, HTTP %d'%response.status_code
 
 	def test_domain(self):
 		c = self.client
@@ -70,22 +82,34 @@ class EntryModelTest(TestCase):
 		assert l2<l1-1000,'empty page is not smaller than filled page'
 		# assert response.status_code >= 401,'%s returned %d'%(url,response.status_code)
 
-	def size_tests(self):
-		expdom = '1.10.8.20'
+	def test_scatterdoamin_raw(self):
 
+		expdom = '1.10.8.20'
 		c = self.client
 		url = reverse('scatterplot_domain', kwargs={'homsf_id':expdom}) 
 		check_size(c,url,30000)
 
+	def test_scatterdomain_pcnorm(self):
+		expdom = '1.10.8.20'
+		c = self.client
 		url = reverse('scatterplot_domain', kwargs={'homsf_id':expdom}) + '?scatter=pcnorm'
 		check_size(c,url,30000)
 
+	def test_scatterhomsf_raw(self):	
+		c = self.client
 		url = reverse('scatterplot_homsf',    )
 		check_size(c,url,60000)
 
-		url = reverse('scatterplot_homsf',) 
-		check_size(c,url,60000)
-
+		# url = reverse('scatterplot_homsf',) 
+		# check_size(c,url,60000)
+		pass 
+	def test_dups_node(self):
+		### ATM the "id" does not contain the hierarchial information thus not so useful
+		dupes = ( classification.objects.values('id')
+		    .annotate(ct = Count('id')) 
+		     .filter(ct__gt=1)
+		)
+		assert len(dupes)==0		
 	# def sest_superfamily(self):
 	# 	# 1.10.3460.10	
 	# 	node = '1.10.3460.10'
@@ -161,17 +185,6 @@ class EntryModelTest(TestCase):
 	# 	# print('HTTP %d')
 	# 	assert response.status_code < 400, 'Index page not working, HTTP %d'%response.status_code
 
-	def test_domain_homepage(self):
-		response = self.client.get('/tst/domain/')
-		request = response.wsgi_request
-		print(request)
-		assert response.status_code < 400, 'Default domain collection PAGE not reachable, HTTP %d'%response.status_code
-
-	def test_superfamily_homepage(self):
-		response = self.client.get('/tst/superfamily/')
-		request = response.wsgi_request
-		print(request)
-		assert response.status_code < 400, 'Default superfamily collection PAGE not reachable, HTTP %d'%response.status_code
 
 	# Class = models.IntegerField(default=None)
 	# arch = models.IntegerField(default=None)
