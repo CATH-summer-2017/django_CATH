@@ -44,7 +44,7 @@ before_script:
   - ./manage.py dumpdata tst -o tst/fixtures/test_temp.json
   # - ./manage.py dumpdata tst -o
 
-  - ./manage.py runserver 127.0.0.0:8001 &
+  - ./manage.py runserver 0.0.0.0:8001 &
 
 script:
   - # do nothing;
