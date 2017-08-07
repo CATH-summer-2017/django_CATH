@@ -6,6 +6,7 @@ services: mysql
 
 env:
   global:
+    - PDBlib="/home/travis/build/shouldsee/rootsite/django_CATH/static/temppdbs"
     # - DJANGO_SETTINGS_MODULE="rootsite.settings"
     # - PYTHONPATH="/home/travis/build/shouldsee/django_CATH" 
 before_install:
@@ -29,6 +30,13 @@ before_script:
   - mysql -e 'create database test_django; grant all privileges on test_django.* to 'travis'@'localhost';'
   - cd rootsite
   - ./manage.py migrate tst 
+
+  - ./manage.py shell < rootsite/tst/initnodes.py
+  - ./manage.py shell < rootsite/tst/struct2S.py
+  - ./manage.py shell < rootsite/tst/S2H.py
+  - ./manage.py dumpdata tst -o tst/fixtures/test_temp.json
+  # - ./manage.py dumpdata tst -o
+
   - ./manage.py runserver 127.0.0.0:8001 &
 
 script:
