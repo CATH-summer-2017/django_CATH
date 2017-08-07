@@ -506,8 +506,9 @@ def scatterplot_domain_maha(request):
 	# dset=domain
 	# qset = domain.objects.all()#
 	# qset = domain.objects.order_by('-domain_stat__maha_dist')[:1000]#
-	qset = classification.objects.order_by('-domain__domain_stat__maha_dist')[:1000]#
-	qset = qset.exclude(domain__domain_stat__isnull = True)
+	qset = classification.objects.exclude(domain__domain_stat__isnull = True)
+	qset = qset.order_by('-domain__domain_stat__maha_dist')[:1000]#
+	# qset = classification.objects.order_by('-domain__domain_stat__maha_dist')[:1000]#
 
 	# fields = [
 	# 	# 'classification__parent__node_stat__Rsq_NBcount_Acount',
