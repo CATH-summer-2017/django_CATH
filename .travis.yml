@@ -6,9 +6,9 @@ services: mysql
 
 env:
   global:
-    - PDBlib="/home/travis/build/shouldsee/rootsite/tst/static/temppdbs"
+    # - PDBlib="/home/travis/build/CATH-summer-2017/rootsite/tst/static/temppdbs"
     # - DJANGO_SETTINGS_MODULE="rootsite.settings"
-    # - PYTHONPATH="/home/travis/build/shouldsee/django_CATH" 
+    # - PYTHONPATH="/home/travis/build/CATH-summer-2017/django_CATH" 
 before_install:
   - pip install Django==1.11.*
   - cp -r init ..
@@ -17,6 +17,10 @@ before_install:
   - cat init/django_settings.py >> rootsite/rootsite/settings.py
   - cat init/django_urls.py >> rootsite/rootsite/urls.py
 
+
+  - echo ~ ;
+  - echo $PWD;
+  # - tree rootsite ; ###tree is not installed
   # - pwd
 
 install:
@@ -28,11 +32,10 @@ before_script:
   # - mysql -e 'create database django; create database test_django;'
   - mysql -e 'create database django; grant all privileges on django.* to 'travis'@'localhost';'
   - mysql -e 'create database test_django; grant all privileges on test_django.* to 'travis'@'localhost';'
-  - echo ~ ;
-  - echo $PWD;
-  - tree rootsite ;
+
   - cd rootsite
   - ./manage.py migrate tst 
+  - echo PDBlib="$PWD/tst/static/temppdbs" #### this is easier
 
   - ./manage.py shell < tst/dbscript/initnodes.py
   - ./manage.py shell < tst/dbscript/struct2S.py
