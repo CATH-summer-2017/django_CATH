@@ -47,8 +47,11 @@ def lookup(node,db_version):
 class EntryModelTest(TestCase):
 
 	# fixtures = ['c410_s35_fixed.json']y 
+	# fixtures = [
+	# 'test2000'
+	# ]
 	fixtures = [
-	'test2000'
+	'test_temp.json'
 	]
 	def test_homepage(self):
 		response = self.client.get('/tst/test/')
@@ -70,7 +73,7 @@ class EntryModelTest(TestCase):
 	def test_domain(self):
 		c = self.client
 
-		expdom = '1.10.8.20'
+		expdom = '2.30.39.10'
 		url = reverse('domain_collection',args=[expdom])
 		response = self.client.get(url)
 		l1 = check_size(c,url,20000)
@@ -84,13 +87,13 @@ class EntryModelTest(TestCase):
 
 	def test_scatterdoamin_raw(self):
 
-		expdom = '1.10.8.20'
+		expdom = '2.30.39.10'
 		c = self.client
 		url = reverse('scatterplot_domain', kwargs={'homsf_id':expdom}) 
 		check_size(c,url,30000)
 
 	def test_scatterdomain_pcnorm(self):
-		expdom = '1.10.8.20'
+		expdom = '2.30.39.10'
 		c = self.client
 		url = reverse('scatterplot_domain', kwargs={'homsf_id':expdom}) + '?scatter=pcnorm'
 		check_size(c,url,30000)
