@@ -4,7 +4,7 @@ from Bio.PDB import *
 from .util import *
 import sys,os
 
-def parse_PDB(pdbname,pdbdir=None,parser = None):
+def parse_PDB(pdbname,pdbdir=None,parser = None,**kwargs):
 	if pdbdir:
 		pass
 	else:

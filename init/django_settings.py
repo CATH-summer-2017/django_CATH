@@ -1,8 +1,8 @@
 
 import sys
 TESTING = len(sys.argv) > 1 and sys.argv[1] == 'test'
-USE_MODELLER = '0'
-os.environ['USE_MODELLER']  = USE_MODELLER
+USE_MODELLER = 0
+os.environ['USE_MODELLER']  = '%d'%USE_MODELLER
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'GB'

@@ -38,7 +38,7 @@ def domain_stat_null(d):
 from domutil.pdbutil import *
 
 if not settings.USE_MODELLER:
-    
+
     def domain_stat_fill( d, **kwargs):
         
         ### Using biopython to parse
@@ -57,6 +57,8 @@ if not settings.USE_MODELLER:
         dstat.save()
         return d
 else:
+    print("settings.USE_MODELLER")
+
     def domain_stat_fill( d, **kwargs):
         
         ### Using modeller
