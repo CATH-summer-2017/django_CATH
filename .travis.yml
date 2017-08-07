@@ -28,8 +28,10 @@ before_script:
   # - mysql -e 'create database django; create database test_django;'
   - mysql -e 'create database django; grant all privileges on django.* to 'travis'@'localhost';'
   - mysql -e 'create database test_django; grant all privileges on test_django.* to 'travis'@'localhost';'
-  - cd rootsite
   - echo ~ ;
+  - echo $PWD;
+  - tree rootsite ;
+  - cd rootsite
   - ./manage.py migrate tst 
 
   - ./manage.py shell < tst/dbscript/initnodes.py
