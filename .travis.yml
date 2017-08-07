@@ -36,6 +36,7 @@ before_script:
   - cd rootsite
   - ./manage.py migrate tst 
   - export PDBlib="$PWD/tst/static/temppdbs" #### this is easier //// This DOES NOT work with "echo" !!!
+  - echo $PDBlib
 
   - ./manage.py shell < tst/dbscript/initnodes.py
   - ./manage.py shell < tst/dbscript/struct2S.py
