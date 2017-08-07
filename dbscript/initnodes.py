@@ -2,6 +2,9 @@
 # from tst.utils import *
 from tst.domutil.util import *
 from tst.utils_db import *
+from time import time
+t0 = time()
+
 v_curr = verify_version('test')
 # data = get_gzip()
 # url
@@ -18,15 +21,24 @@ confcount = 0
 data = get_gzip(url)
 mapdict = {}
 
+failcount = 0
 with transaction.atomic():
 #     cc=0
     lines = data.splitlines()[:2000]
     c = counter(lines, per = 1000)
     for line in lines:
-        n,conf = parse_domain(line, v_curr)
-        confcount += conf
+    	try:
+	        n,conf = parse_domain(line, v_curr)
+	        confcount += conf
+	    except:
+	    	failcount += 1
         c.count()
     #     pass
     #     print(line)
         pass
-print()
+
+failrate = failcount/float(c.imax) 
+
+print "%d nodes in conflict" % confcount
+assert failrate < 0.1, 'fail rate is too high: expected < 10%%, actual: %2.2f%%' % failrate
+print('Ended after %.4f' % (time()-t0))  # len(lst)d
