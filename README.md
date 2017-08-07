@@ -41,7 +41,7 @@ Update the config for rootsite by appending with those in ```init/```. This shou
 cp rootsite/tst/init . -r
 cat init/django_settings.py >> rootsite/rootsite/settings.py
 cat init/django_urls.py >> rootsite/rootsite/urls.py
-rm init
+rm init -rf
 ```
 and remember to grant access to your specified user "django"
 ```sh
