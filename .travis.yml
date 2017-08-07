@@ -31,9 +31,9 @@ before_script:
   - cd rootsite
   - ./manage.py migrate tst 
 
-  - ./manage.py shell < rootsite/tst/initnodes.py
-  - ./manage.py shell < rootsite/tst/struct2S.py
-  - ./manage.py shell < rootsite/tst/S2H.py
+  - ./manage.py shell < rootsite/tst/dbscript/initnodes.py
+  - ./manage.py shell < rootsite/tst/dbscript/struct2S.py
+  - ./manage.py shell < rootsite/tst/dbscript/S2H.py
   - ./manage.py dumpdata tst -o tst/fixtures/test_temp.json
   # - ./manage.py dumpdata tst -o
 
