@@ -33,17 +33,17 @@ def domain_stat_null(d):
 # if int(settings.TESTING):
 #     pass
 # else:
-if 1:
-    from domutil.pdbutil import *
+
+# if 1:
+from domutil.pdbutil import *
+
+if not settings.USE_MODELLER:
+    
     def domain_stat_fill( d, **kwargs):
         
-        if settings.USE_MODELLER:
-        ### Using modeller
-            outdict = get_something_modeller( str(d.domain_id) , **kwargs)
-        else:
-            ### Using biopython to parse
-            struct = parse_PDB(str(d.domain_id),**kwargs)
-            outdict = get_something( struct , **kwargs)
+        ### Using biopython to parse
+        struct = parse_PDB(str(d.domain_id),**kwargs)
+        outdict = get_something( struct , **kwargs)
 
         try:
             dstat = d.domain_stat
@@ -56,7 +56,23 @@ if 1:
                 setattr(dstat, k, v)
         dstat.save()
         return d
+else:
+    def domain_stat_fill( d, **kwargs):
+        
+        ### Using modeller
+        outdict = get_something_modeller( str(d.domain_id) , **kwargs)
+        
+        try:
+            dstat = d.domain_stat
+        except:
+            dstat = domain_stat_null(d);
 
+
+        for k,v in outdict.iteritems():
+            if hasattr(dstat,k):
+                setattr(dstat, k, v)
+        dstat.save()
+        return d
 
     # from modeller import *
     ### Modeller initialisation
