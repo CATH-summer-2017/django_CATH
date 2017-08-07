@@ -402,7 +402,12 @@ def scatterplot_domain(request,
 	scatter = request.GET.get('scatter','raw')
 
 	qset = homsf2domain(homsf_id)
-	qset = qset.exclude(domain_stat__isnull = True)
+	try:
+		qset = qset.exclude(domain_stat__isnull = True) ##### IMP!! This is incompatible with the slicing , need to implement slicing afterwards
+	except Exception as e:
+		print e
+
+
 	if scatter == 'raw':
 		fields  = [
 			# 'domain__domain_stat__res_count',
