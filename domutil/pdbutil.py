@@ -86,6 +86,7 @@ def get_something(input, env = None, auto_complete = False, s0 = None, pdbdir = 
 				if os.path.isfile( san_pdbfile ):
 					pass
 				else: 
+					struct = parse_PDB(pdbname, **kwargs)
 					io.set_structure( struct )
 					io.save(  san_pdbfile,
 						Hsel)
