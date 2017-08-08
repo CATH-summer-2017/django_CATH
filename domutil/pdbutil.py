@@ -73,9 +73,10 @@ def get_something(input, env = None, auto_complete = False, s0 = None, pdbdir = 
 	if isinstance(input,Structure.Structure):
 		struct = input
 	else:
-		with stdoutIO(s0) as s:
+		if 1:
+		# with stdoutIO(s0) as s:
+			pdbname = input
 			if not sanitise:
-				pdbname = input
 				struct = parse_PDB(pdbname, **kwargs)
 
 			else:
