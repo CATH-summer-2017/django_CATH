@@ -6,7 +6,7 @@ import sys,os
 
 
 import warnings
-from Bio import PDBConstructionWarning
+from Bio.PDB.PDBExceptions import PDBConstructionWarning
 warnings.simplefilter('ignore', PDBConstructionWarning)
 
 
