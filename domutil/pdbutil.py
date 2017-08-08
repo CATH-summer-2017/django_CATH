@@ -4,7 +4,7 @@ from Bio.PDB import *
 from .util import *
 import sys,os
 
-
+#### Comment these to recover warning on importing PDB
 import warnings
 from Bio.PDB.PDBExceptions import PDBConstructionWarning
 warnings.simplefilter('ignore', PDBConstructionWarning)
