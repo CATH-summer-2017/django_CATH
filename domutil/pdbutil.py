@@ -68,7 +68,7 @@ if not os.path.isdir(full('$PDBlib/sanitised')):
 	os.mkdir(full('$PDBlib/sanitised'))
 
 
-def sanitise(struct):
+def sanitise(struct, **kwargs):
 	pdbname = struct.id
 	san_pdbname = 'sanitised/%s'% pdbname
 	san_pdbfile = full( '$PDBlib/' + san_pdbname)
@@ -93,7 +93,7 @@ def get_something(input, env = None, auto_complete = False, s0 = None, pdbdir = 
 		struct = parse_PDB(pdbname, **kwargs)
 
 	if sanitising:
-		struct = sanitise(struct)
+		struct = sanitise(struct, **kwargs)
 
 		# struct = p.get_structure('X', pdbfile)
 	alst = list(struct.get_atoms())
