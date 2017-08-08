@@ -5,6 +5,11 @@ from .util import *
 import sys,os
 
 
+import warnings
+from Bio import PDBConstructionWarning
+warnings.simplefilter('ignore', PDBConstructionWarning)
+
+
 _hydrogen = re.compile("[123 ]*H.*") 
 class unsel_H(object): 
 

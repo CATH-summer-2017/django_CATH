@@ -44,7 +44,9 @@ else:
             'ENGINE': 'django.db.backends.mysql',
             # 'NAME': 'mtest_django',  #### This is for manual testing
             'NAME': 'django',
-            
+	        'TEST': {
+	            'NAME': 'test_django',
+	            },            
             'USER': 'django',
             'PASSWORD': 'Django_passw0rd',
             'HOST': '127.0.0.1',
