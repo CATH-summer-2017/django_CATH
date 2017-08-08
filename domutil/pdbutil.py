@@ -4,6 +4,43 @@ from Bio.PDB import *
 from .util import *
 import sys,os
 
+
+_hydrogen = re.compile("[123 ]*H.*") 
+class unsel_H(object): 
+
+	"""	
+	Adapted from Bio.PDB.Dice.ChainSelector(), internal routine for extract()
+	Remove hydrogens, waters and ligands. Only use model 0 by default. 
+	""" 
+	
+	def __init__(self, model_id = 0):
+		self.model_id = model_id
+	
+	def accept_model(self, model): 
+	    # model - only keep model 0 
+	    if model.get_id() == self.model_id: 
+	        return 1 
+	    return 0 	
+	def accept_chain(self, chain): 
+	    return 1
+	def accept_residue(self, residue): 
+	    hetatm_flag, resseq, icode = residue.get_id() 
+	    if hetatm_flag != " ": 
+	        # skip HETATMS 
+	        return 0 
+	    if icode != " ": 
+	        warnings.warn("WARNING: Icode %s at position %s" 
+	                      % (icode, resseq), BiopythonWarning) 
+	    return 1 
+	
+	def accept_atom(self, atom): 
+	    # atoms - get rid of hydrogens 
+	    name = atom.get_id() 
+	    if _hydrogen.match(name): 
+	        return 0 
+	    else: 
+	        return 1 
+	
 Hsel = unsel_H()
 io = PDBIO()
 
