@@ -67,32 +67,33 @@ def parse_PDB(pdbname,pdbdir=None,parser = None, **kwargs):
 if not os.path.isdir(full('$PDBlib/sanitised')):
 	os.mkdir(full('$PDBlib/sanitised'))
 
+
+def sanitise(struct):
+	pdbname = struct.id
+	san_pdbname = 'sanitised/%s'% pdbname
+	san_pdbfile = full( '$PDBlib/' + san_pdbname)
+
+	if os.path.isfile( san_pdbfile ):
+		pass
+	else: 
+		struct = parse_PDB(pdbname, **kwargs)
+		io.set_structure( struct )
+		io.save(  san_pdbfile,
+			Hsel)
+	struct = parse_PDB(san_pdbname, **kwargs)
+	return struct
+
 def get_something(input, env = None, auto_complete = False, s0 = None, pdbdir = None, cutout=15.0,cutin=3.5,
-	sanitise = 1,
+	sanitising = 1,
 	 **kwargs):
 	if isinstance(input,Structure.Structure):
 		struct = input
 	else:
-		if 1:
-		# with stdoutIO(s0) as s:
-			pdbname = input
-			if not sanitise:
-				struct = parse_PDB(pdbname, **kwargs)
+		pdbname = input
+		struct = parse_PDB(pdbname, **kwargs)
 
-			else:
-				san_pdbname = 'sanitised/%s'% pdbname
-				san_pdbfile = full( '$PDBlib/' + san_pdbname)
-
-				if os.path.isfile( san_pdbfile ):
-					pass
-				else: 
-					struct = parse_PDB(pdbname, **kwargs)
-					io.set_structure( struct )
-					io.save(  san_pdbfile,
-						Hsel)
-				struct = parse_PDB(san_pdbname, **kwargs)
-
-
+	if sanitising:
+		struct = sanitise(struct)
 
 		# struct = p.get_structure('X', pdbfile)
 	alst = list(struct.get_atoms())
