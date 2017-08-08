@@ -4,7 +4,11 @@ from Bio.PDB import *
 from .util import *
 import sys,os
 
-def parse_PDB(pdbname,pdbdir=None,parser = None,**kwargs):
+Hsel = unsel_H()
+io = PDBIO()
+
+
+def parse_PDB(pdbname,pdbdir=None,parser = None, **kwargs):
 	if pdbdir:
 		pass
 	else:
@@ -19,18 +23,38 @@ def parse_PDB(pdbname,pdbdir=None,parser = None,**kwargs):
 	
 	if not parser:
 		parser = PDBParser()
-	struct = parser.get_structure('X', pdbfile)
+	struct = parser.get_structure( pdbname, pdbfile)
 
 	return struct
 
+if not os.path.isdir(full('$PDBlib/sanitised')):
+	os.mkdir(full('$PDBlib/sanitised'))
+
 def get_something(input, env = None, auto_complete = False, s0 = None, pdbdir = None, cutout=15.0,cutin=3.5,
+	sanitise = 1,
 	 **kwargs):
 	if isinstance(input,Structure.Structure):
 		struct = input
 	else:
 		with stdoutIO(s0) as s:
-			pdbname = input
-			struct = parse_PDB(pdbname, **kwargs)
+			if not sanitise:
+				pdbname = input
+				struct = parse_PDB(pdbname, **kwargs)
+
+			else:
+				san_pdbname = 'sanitised/%s'% pdbname
+				san_pdbfile = full( '$PDBlib/' + san_pdbname)
+
+				if os.path.isfile( san_pdbfile ):
+					pass
+				else: 
+					io.set_structure( struct )
+					io.save(  san_pdbfile,
+						Hsel)
+				struct = parse_PDB(san_pdbname, **kwargs)
+
+
+
 		# struct = p.get_structure('X', pdbfile)
 	alst = list(struct.get_atoms())
 	acount = len(alst)
@@ -42,9 +66,10 @@ def get_something(input, env = None, auto_complete = False, s0 = None, pdbdir = 
 
 	### For some weird reasons, many structures are not correctly parsed by Biopython, (but Okay with modeller)
 	### This is a temporary patch to detect overlapping
-	if acount > rcount * 11:
-		acount /= 2
-		nbpair_count /= 4
+
+	# if acount > rcount * 11:
+	# 	acount /= 2
+	# 	nbpair_count /= 4
 
 	outdict = {"nDOPE":0,
 		"DOPE": 0,

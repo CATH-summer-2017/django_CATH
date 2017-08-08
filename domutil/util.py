@@ -2,11 +2,13 @@
 # from modeller.scripts import complete_pdb
 # ### Enable this line to reduce verbositys
 # # log.none()
-import sys
+import sys,os
 import StringIO
 import contextlib
 import re 
 import numpy as np
+
+full = lambda p: os.path.expandvars(p)
 
 p_nb = re.compile("Number of non-bonded pairs \(excluding 1-2,1-3,1-4\): *([0-9]*)")
 p_energy=re.compile("Current energy *: *([0-9,\.,-]*)")
