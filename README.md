@@ -73,7 +73,7 @@ Usage
 * http://localhost:8001/tst/domain ### page contain werido domains
 * http://localhost:8001/tst/superfamily ### page listing superfamilies
 * http://localhost:8001/tst/superfamily/id/2.30.39.10 ### page listing a specifi superfamily
-* To load pre-calculated datasets (stored in "fixtures/"), for example do 
+* To load pre-calculated datasets (stored in "fixtures/"), simply do:
 ```
 ./manage.py loaddata tst/fixtures/cathB-0728-DOPE_nbPCA.json
 ```
