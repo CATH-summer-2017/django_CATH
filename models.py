@@ -254,7 +254,10 @@ class domain_stat(models.Model):
 	pcx = models.FloatField(null = True)
 	pcy = models.FloatField(null = True)
 
-
+# class sequence_type(models.Model):
+class hit(models.Model):
+	# query = models.
+	pass
 
 
 class s35_rep(domain):
