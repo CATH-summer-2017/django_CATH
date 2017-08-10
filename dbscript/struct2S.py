@@ -29,7 +29,10 @@ import sys
 # stdoutIO()
 from Bio.PDB import PDBParser
 parser = PDBParser()
-with stdoutIO() as s0:
+
+s0 = None
+if 1:
+# with stdoutIO() as s0:
 	with transaction.atomic():
 		for d in lst:
 			c.count()
