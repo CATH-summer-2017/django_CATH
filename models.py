@@ -254,10 +254,6 @@ class domain_stat(models.Model):
 	pcx = models.FloatField(null = True)
 	pcy = models.FloatField(null = True)
 
-# class sequence_type(models.Model):
-class hit(models.Model):
-	# query = models.
-	pass
 
 
 class s35_rep(domain):
@@ -266,4 +262,78 @@ class s35_rep(domain):
 	# rep_type = models.CharField(default='s35',max_length=4);
 	# domain.rep_type='s35';
 	# self.save()
+
+### The following model is for ISS proj.
+### This 
+class seqDB(models.Model):
+	name = models.CharField(default=None,max_length=20);
+	version =  models.CharField(default=None,max_length=10);
+	def __str__(self):
+		return self.name + "_Ver:" + self.version
+
+
+
+class sequence(models.Model):
+	seqDB = models.ForeignKey(seqDB, on_delete= models.CASCADE);
+	acc = models.CharField(  max_length=10, db_index = True)
+	subversion = models.IntegerField(default = 0)
+	length = models.IntegerField()
+	cath_node = models.ForeignKey(classification, null = True, on_delete= models.CASCADE);
+
+	def __str__(self):
+		return  "%s from %s" % (self.acc, str(seqDB) )
+	def full_acc(self):
+		return "%s.%d" % ( self.acc, self.subversion)
+
+class HSPfrag(models.Model):
+	### The HSPfrag may be discontinuous in itself. HMMsearch only outputs the start and end, which is noted here.
+	sequence = models.ForeignKey(sequence, on_delete= models.CASCADE);
+	start = models.IntegerField(default = None)
+	end = models.IntegerField(default= None)
+	raw = models.BooleanField(default = 1)
+	def is_valid(self):
+		valid = self.start > 0 and self.end > self.start and self.sequence.length > self.end  
+		return valid
+	def span_str(self):
+		return "%d-%d" % (self.start, self.end)
+	def __str__(self):
+		return "HSP fragment on %s, span [%s]" % (self.sequence.name,self.span_str())
+
+
+
+class HMMprofile(models.Model):
+	# cath_node = models.ForeignKey(classification, default = None, on_delete= models.CASCADE);
+	# rep_domain = models.ForeignKey(domain, on_delete = models.CASCADE)
+	# sequence = models.ForeignKey( sequence, on_delete = models.CASCADE);
+	# cath_node = sequence.cath_node 
+	# locator = models.CharField( max_length=50 )
+	# start = models.IntegerField(null = True)
+	# end = models.IntegerField( null = True)
+
+	cath_node = models.ForeignKey(classification, on_delete = models.CASCADE);
+	hitseq = models.ManyToManyField( HSPfrag )
+
+	# def fill_span(self):
+	# 	lst = locator.split('_')
+	# 	self.start = lst[ 0].split("-")[ 0]
+	# 	self.end   = lst[-1].split("-")[-1]
+	# 	self.save()
+	# 	return [self.start,self.end]
+	# def span_str(self):
+	# 	if not self.start or not self.end:
+	# 		self.fill_span()
+	# 	return "%d-%d" % (self.start, self.end)
+	def __str__(self):
+		return "HMM for %s " % self.cath_node
+
+class hit4hmm2hsp(models.Model):
+	query = models.ForeignKey( HMMprofile, on_delete = models.CASCADE)
+	target = models.ForeignKey( HSPfrag, on_delete = models.CASCADE)
+	logCevalue=models.FloatField(default = None)
+	logIevalue=models.FloatField(default = None)
+	bitscore = models.FloatField(default = None)
+	bias = models.FloatField(default = None)
+	def __str__(self):
+		return "Query:%s \nTarget:%s" % ( str(self.query), str(self.target) )
+	
 
