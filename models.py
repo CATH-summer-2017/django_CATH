@@ -311,7 +311,12 @@ class HMMprofile(models.Model):
 	# end = models.IntegerField( null = True)
 
 	cath_node = models.ForeignKey(classification, on_delete = models.CASCADE);
-	hitseq = models.ManyToManyField( HSPfrag )
+	# cath_node = models.OneToOneField(classification, on_delete = models.CASCADE);
+	# hitseq = models.ManyToManyField( HSPfrag )
+	hits = models.ManyToManyField( sequence, through = 'hit4hmm2hsp' )
+
+
+	text = models.TextField(blank = True, null = True)
 
 	# def fill_span(self):
 	# 	lst = locator.split('_')
@@ -328,11 +333,19 @@ class HMMprofile(models.Model):
 
 class hit4hmm2hsp(models.Model):
 	query = models.ForeignKey( HMMprofile, on_delete = models.CASCADE)
-	target = models.ForeignKey( HSPfrag, on_delete = models.CASCADE)
+	
+	target = models.ForeignKey( sequence, on_delete = models.CASCADE)
+	start = models.IntegerField(default = None)
+	end = models.IntegerField(default= None)
+	
+
 	logCevalue=models.FloatField(default = None)
 	logIevalue=models.FloatField(default = None)
 	bitscore = models.FloatField(default = None)
 	bias = models.FloatField(default = None)
+	acc_avg = models.FloatField(null = True)
+
+	
 	def __str__(self):
 		return "Query:%s \nTarget:%s" % ( str(self.query), str(self.target) )
 	

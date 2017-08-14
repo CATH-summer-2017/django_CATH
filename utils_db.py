@@ -335,3 +335,32 @@ def parse_domain(line, v = verify_version('test') ):
         pass
 
     #### Otherwise, write conflict to file
+
+
+
+
+
+#### ISS
+def seqheader_guess_parser(header):
+    if header.startswith('cath') or header.startswith('CATH') :
+        header_parser = seqheader_parse_cath
+    
+    jdict = header_parser(header)
+    seqDB_curr = verify_exist_entry( jdict["seqDB"], seqDB)
+    
+    return( [header_parser, seqDB_curr])
+
+
+def verify_exist_entry(jdict, dbmodel):
+    #### Check whether this version is recorded in 'version' table
+    qset = dbmodel.objects.filter(**jdict)
+    if qset.count() > 1:
+        raise Exception,'multiple %s with values %s'%( dbmodel, jdict)
+    elif not qset.exists():
+        v = dbmodel.objects.create(**jdict)
+        v.save()
+    else:
+        v = qset[0]
+    return v
+
+
