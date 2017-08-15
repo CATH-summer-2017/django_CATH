@@ -14,7 +14,7 @@ p_nb = re.compile("Number of non-bonded pairs \(excluding 1-2,1-3,1-4\): *([0-9]
 p_energy=re.compile("Current energy *: *([0-9,\.,-]*)")
 p_atomCount = re.compile("Number of all, selected real atoms *: ([0-9, ]{10})")
 p_resCount = re.compile("Number of all residues in MODEL *: *([0-9]*)")
-
+p_header = re.compile("NAME.*?\n")
 
 levels=[ None,
 'root',
@@ -316,8 +316,8 @@ def hsp2jdict(hsp,query = None):
     jdict.pop('domain_index')
     jdict["start"]=jdict.pop("env_start")
     jdict["end"]=jdict.pop("env_end")
-    jdict["logCevalue"] = np.log10(jdict.pop("evalue_cond"))
-    jdict["logIevalue"] = np.log10(jdict.pop("evalue"))
+    jdict["logCevalue"] = max(-1000,np.log10(jdict.pop("evalue_cond")))
+    jdict["logIevalue"] = max(-1000,np.log10(jdict.pop("evalue")))
     
     return jdict
 
