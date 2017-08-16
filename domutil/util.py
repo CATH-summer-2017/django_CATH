@@ -16,6 +16,7 @@ p_atomCount = re.compile("Number of all, selected real atoms *: ([0-9, ]{10})")
 p_resCount = re.compile("Number of all residues in MODEL *: *([0-9]*)")
 p_header = re.compile("NAME.*?\n")
 p_hmmlen = re.compile('LENG  (\d+)\n')
+p_cathdomain = re.compile("([0-9,a-z,A-Z]{7})")
 
 levels=[ None,
 'root',
@@ -64,8 +65,9 @@ def get_gzip(url = 'http://download.cathdb.info/cath/releases/daily-release/newe
     mapdict = {}
     return data
 
+import sys
 class counter():
-    def __init__(self, lst, per = 100, fper = 1, INF = False):
+    def __init__(self, lst, per = 100, fper = 1, INF = False, stdout = sys.stdout):
         # self.lst = list(lst);
         # self.imax= len(lst)
         if INF:
@@ -77,19 +79,23 @@ class counter():
         self.per = per
         self.fper = fper
         self.flst = []
+        self.e = None
+        self.stdout = stdout
 
 
     def count(self):
         if not self.i % self.per:
             print >> sys.__stdout__,'%d of %d'%(self.i,self.imax)
-            print '%d of %d'%(self.i,self.imax)
+            print >> self.stdout, '%d of %d'%(self.i,self.imax)
         self.i += 1
     def fail(self, msg, ins = None):
      #    if not self.f % self.fper:
-        print >> sys.__stdout__, msg
-        print msg
+        if msg:
+            print >> sys.__stdout__, msg
+            print >> self.stdout, msg
         self.f += 1
-        self.flst += ins
+        self.flst += [ins]
+        self.e = e
     def finish(self):
         self.imax = self.i
 
