@@ -10,11 +10,28 @@ Also check [wiki](https://github.com/CATH-summer-2017/django_CATH/wiki) of this 
 
 Prerequisite
 ------
+Preferably you should start a virtual environment to keep everything trackable.
+
+### Django > 1.8
 You should have Django installed before installation.
 Install Django with
 ```sh
 pip install Django==1.11.* --user
 ```
+If for whatever reason this fails, you may try `apt insatll python-django` but please do check the Django version is higher than 1.8. Or you can download .whl from [Django-1.11.4-py2.py3-none-any.whl](https://pypi.python.org/packages/fc/fb/01e0084061c50f1160c2db5565ff1c3d8d76f2a76f67cd282835ee64e04a/Django-1.11.4-py2.py3-none-any.whl#md5=71cf96f790b1e729c8c1a95304971341)  and do "wheel install Django-1.11.4-py2.py3-none-any.whl" .
+
+### MySQL
+Install a local MySQL via
+```sh
+sudo apt-get install mysql-client
+sudo apt-get install mysql-server
+```
+
+You might need this package on top of a working MySQL
+```sh
+sudo apt-get install libmysqlclient-dev
+```
+
 Compatibility
 -----
 Python: 2.7.0
