@@ -73,6 +73,11 @@ class Migration(migrations.Migration):
             field=models.ManyToManyField(through='tst.hit4hmm2hsp', to='tst.sequence'),
         ),
         migrations.AddField(
+            model_name='hmmprofile',
+            name='length',
+            field=models.IntegerField(default=None),
+        ),
+        migrations.AddField(
             model_name='hit4hmm2hsp',
             name='query',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='tst.HMMprofile'),
@@ -82,4 +87,5 @@ class Migration(migrations.Migration):
             name='target',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='tst.sequence'),
         ),
+
     ]

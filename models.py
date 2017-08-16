@@ -314,6 +314,7 @@ class HMMprofile(models.Model):
 	# cath_node = models.OneToOneField(classification, on_delete = models.CASCADE);
 	# hitseq = models.ManyToManyField( HSPfrag )
 	hits = models.ManyToManyField( sequence, through = 'hit4hmm2hsp' )
+	length = models.IntegerField(default = None)
 
 
 	text = models.TextField(blank = True, null = True)
@@ -330,6 +331,7 @@ class HMMprofile(models.Model):
 	# 	return "%d-%d" % (self.start, self.end)
 	def __str__(self):
 		return "HMM for %s " % self.cath_node
+
 
 class hit4hmm2hsp(models.Model):
 	query = models.ForeignKey( HMMprofile, on_delete = models.CASCADE)
@@ -348,5 +350,6 @@ class hit4hmm2hsp(models.Model):
 	
 	def __str__(self):
 		return "Query:%s \nTarget:%s" % ( str(self.query), str(self.target) )
+
 	
 

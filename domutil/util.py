@@ -15,6 +15,7 @@ p_energy=re.compile("Current energy *: *([0-9,\.,-]*)")
 p_atomCount = re.compile("Number of all, selected real atoms *: ([0-9, ]{10})")
 p_resCount = re.compile("Number of all residues in MODEL *: *([0-9]*)")
 p_header = re.compile("NAME.*?\n")
+p_hmmlen = re.compile('LENG  (\d+)\n')
 
 levels=[ None,
 'root',
@@ -75,6 +76,7 @@ class counter():
         self.f   = 0
         self.per = per
         self.fper = fper
+        self.flst = []
 
 
     def count(self):
@@ -82,11 +84,12 @@ class counter():
             print >> sys.__stdout__,'%d of %d'%(self.i,self.imax)
             print '%d of %d'%(self.i,self.imax)
         self.i += 1
-    def fail(self, msg):
+    def fail(self, msg, ins = None):
      #    if not self.f % self.fper:
         print >> sys.__stdout__, msg
         print msg
         self.f += 1
+        self.flst += ins
     def finish(self):
         self.imax = self.i
 
@@ -347,14 +350,16 @@ def hmmsearch(hmm,seqDB_curr = None, seqDB_file = None, tmpdir = "/tmp",
     # gc.collect()
 
     parser = SearchIO.parse( tmpdir + "/domtbl", tbl_format )
-    q_hits = next(parser)
-    q_hits.id = seqheader_parse_cath(q_hits.id)["acc"]
-    def acc_mapper(hit):
-#         hit.query
-        hit.id = seqheader_parse_cath(hit.id)["acc"]
-        return hit
-    q_hits = q_hits.hit_map(acc_mapper)
-    return q_hits
+    
+    q_hits = next(parser,None)
+    if q_hits:
+	    q_hits.id = seqheader_parse_cath(q_hits.id)["acc"]
+	    def acc_mapper(hit):
+	#         hit.query
+	        hit.id = seqheader_parse_cath(hit.id)["acc"]
+	        return hit
+	    q_hits = q_hits.hit_map(acc_mapper)
+	    return q_hits
     
 	# oldhits = hmm.hit4hmm2hsp_set.all()
 	# for hit in q_hits:
@@ -374,7 +379,7 @@ def hmmsearch(hmm,seqDB_curr = None, seqDB_file = None, tmpdir = "/tmp",
 # #         q.delete()
 # #         dis_q.update()
         
-    return hmm.hit4hmm2hsp_set
+    # return hmm.hit4hmm2hsp_set
 
 def batch_qs(qs, batch_size=1000):
     """
