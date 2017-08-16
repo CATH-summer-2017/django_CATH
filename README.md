@@ -46,8 +46,8 @@ rm init -rf
 and remember to grant access to your specified user "django"
 ```sh 
 #### run commands with appropriate --user and --password
-mysql -e 'create database django; grant all privileges on django.* to 'django'@'localhost';'
-mysql -e 'create database test_django; grant all privileges on test_django.* to 'django'@'localhost';'
+mysql -e 'create database django charset utf8; grant  all privileges on django.* to 'django'@'localhost';'
+mysql -e 'create database test_django charset utf8; grant all privileges on test_django.* to 'django'@'localhost';'
 ```
 
 1. Finally, install dependencies with:
