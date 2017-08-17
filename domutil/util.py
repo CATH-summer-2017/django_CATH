@@ -102,7 +102,10 @@ class counter():
             print >> self.stdout, msg
         self.f += 1
         self.flst += [ins]
-        self.e = e
+        try:
+            self.e = e
+        except:
+            pass
     def finish(self):
         self.imax = self.i
 
@@ -419,3 +422,36 @@ def acc_mapper_cath(hit):
     hit.id = seqheader_parse_cath(hit.id)["acc"]
     return hit    
 
+
+
+
+
+
+##### iterating over COO sparse matrix (10 times faster than DOK matrix)
+
+import random
+import itertools
+
+# def using_nonzero(x):
+#     rows,cols = x.nonzero()
+#     for row,col in zip(rows,cols):
+#         ((row,col), x[row,col])
+
+# def using_coo(x):
+#     cx = scipy.sparse.coo_matrix(x)    
+#     for i,j,v in zip(cx.row, cx.col, cx.data):
+#         (i,j,v)
+
+def using_tocoo(x):
+    cx = x.tocoo()    
+    it = zip(cx.row, cx.col, cx.data)
+    return it
+    # for i,j,v in zip(cx.row, cx.col, cx.data):
+    #     (i,j,v)
+
+def using_tocoo_izip(x):
+    cx = x.tocoo() 
+    it = itertools.izip(cx.row, cx.col, cx.data)
+    return it   
+    # for i,j,v in itertools.izip(cx.row, cx.col, cx.data):
+    #     yield (i,j,v)
