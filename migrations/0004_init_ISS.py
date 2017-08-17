@@ -13,19 +13,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.CreateModel(
-            name='hit4hmm2hsp',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('start', models.IntegerField(default=None)),
-                ('end', models.IntegerField(default=None)),
-                ('logCevalue', models.FloatField(default=None)),
-                ('logIevalue', models.FloatField(default=None)),
-                ('bitscore', models.FloatField(default=None)),
-                ('bias', models.FloatField(default=None)),
-                ('acc_avg', models.FloatField(null=True)),
-            ],
-        ),
+
         migrations.CreateModel(
             name='HMMprofile',
             fields=[
@@ -62,30 +50,49 @@ class Migration(migrations.Migration):
                 ('seqDB', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='tst.seqDB')),
             ],
         ),
+
+
+
         migrations.AddField(
             model_name='hspfrag',
             name='sequence',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='tst.sequence'),
         ),
-        migrations.AddField(
-            model_name='hmmprofile',
-            name='hits',
-            field=models.ManyToManyField(through='tst.hit4hmm2hsp', to='tst.sequence'),
-        ),
+
         migrations.AddField(
             model_name='hmmprofile',
             name='length',
             field=models.IntegerField(default=None),
         ),
-        migrations.AddField(
-            model_name='hit4hmm2hsp',
-            name='query',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='tst.HMMprofile'),
-        ),
-        migrations.AddField(
-            model_name='hit4hmm2hsp',
-            name='target',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='tst.sequence'),
-        ),
+
+        # migrations.CreateModel(
+        #     name='hit4hmm2hsp',
+        #     fields=[
+        #         ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+        #         ('start', models.IntegerField(default=None)),
+        #         ('end', models.IntegerField(default=None)),
+        #         ('logCevalue', models.FloatField(default=None)),
+        #         ('logIevalue', models.FloatField(default=None)),
+        #         ('bitscore', models.FloatField(default=None)),
+        #         ('bias', models.FloatField(default=None)),
+        #         ('acc_avg', models.FloatField(null=True)),
+        #     ],
+        # ),
+        # migrations.AddField(
+        #     model_name='hit4hmm2hsp',
+        #     name='query',
+        #     field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='tst.HMMprofile'),
+        # ),
+        # migrations.AddField(
+        #     model_name='hit4hmm2hsp',
+        #     name='target',
+        #     field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='tst.sequence'),
+        # ),
+        # migrations.AddField(
+        #     model_name='hmmprofile',
+        #     name='hits',
+        #     field=models.ManyToManyField(through='tst.hit4hmm2hsp', to='tst.sequence'),
+        # ),
+
 
     ]
