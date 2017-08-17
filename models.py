@@ -89,6 +89,11 @@ class domain_manager(models.Manager):
 		domain_set = super(domain_manager, self).get_queryset();
 		# domain_set.annotate(superfamily="")
 		return domain_set
+class defer_text_manager(models.Manager):
+	def get_queryset(self,*args,**kwargs):
+		qset = super(defer_text_manager, self).get_queryset(*args,**kwargs).defer('text');
+		# domain_set.annotate(superfamily="")
+		return qset
 
 class Question(models.Model):
 	question_text = models.CharField(max_length=200)
@@ -318,7 +323,7 @@ class HMMprofile(models.Model):
 
 
 	text = models.TextField(blank = True, null = True)
-
+	objects = defer_text_manager()
 	# def fill_span(self):
 	# 	lst = locator.split('_')
 	# 	self.start = lst[ 0].split("-")[ 0]

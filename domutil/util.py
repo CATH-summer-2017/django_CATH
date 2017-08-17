@@ -67,7 +67,9 @@ def get_gzip(url = 'http://download.cathdb.info/cath/releases/daily-release/newe
 
 import sys
 class counter():
-    def __init__(self, lst, per = 100, fper = 1, INF = False, stdout = sys.stdout):
+    def __init__(self, lst, per = 100, fper = 1, INF = False, stdout = sys.stdout,
+    	ifprint = 1,
+        prefix = '' ):
         # self.lst = list(lst);
         # self.imax= len(lst)
         if INF:
@@ -81,16 +83,21 @@ class counter():
         self.flst = []
         self.e = None
         self.stdout = stdout
+        self.ifprint = ifprint
+        self.prefix = prefix 
 
 
     def count(self):
-        if not self.i % self.per:
-            print >> sys.__stdout__,'%d of %d'%(self.i,self.imax)
-            print >> self.stdout, '%d of %d'%(self.i,self.imax)
+        if not self.i % self.per and self.ifprint:
+            msg = '%d of %d'%(self.i,self.imax)
+            msg = self.prefix + msg
+            print >> sys.__stdout__, msg
+            print >> self.stdout, msg
         self.i += 1
     def fail(self, msg, ins = None):
      #    if not self.f % self.fper:
         if msg:
+            msg = self.prefix + msg
             print >> sys.__stdout__, msg
             print >> self.stdout, msg
         self.f += 1
@@ -315,11 +322,12 @@ def parse_hmmlib(fname):
                 break
 
 # import gc
-def hsp2jdict(hsp,query = None):
+def hsp2jdict(hsp,query = None, simple = False):
     jdict = hsp.__dict__
-    jdict["query_id"] = query.id
-#     print hsp.hit_id
-    jdict["target_id"] = hsp.hit_id
+    if not simple:
+	    jdict["query_id"] = query.id
+	#     print hsp.hit_id
+	    jdict["target_id"] = hsp.hit_id
     # jdict["target_id"] = sequence.objects.get( acc = hsp.hit_id).id
     it = jdict.pop('_items')
     jdict.pop('domain_index')
@@ -329,6 +337,7 @@ def hsp2jdict(hsp,query = None):
     jdict["logIevalue"] = max(-1000,np.log10(jdict.pop("evalue")))
     
     return jdict
+
 
 
 def hmmsearch(hmm,seqDB_curr = None, seqDB_file = None, tmpdir = "/tmp", 
