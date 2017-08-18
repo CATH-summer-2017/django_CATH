@@ -92,6 +92,7 @@ Installation
 1. Set environment variable $PDBlib to where you store your PDB's. Preferably add this line to your bash profile like '~/.bashrc'
   ```sh
   export PDBlib=$PWD/rootsite/tst/static/temppdbs   ### This is the PDB library that comes with the repository
+  export SEQlib=$PWD/rootsite/tst/static/tempseqs   ### This is the PDB library that comes with the repository
   ```
 1. Configure your database connection (MySQL) as [previously described](configure-mysql) and edit ```init/django_settings.py``` accordingly.
 
