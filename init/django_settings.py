@@ -20,7 +20,9 @@ INSTALLED_APPS += (
 )
 
 if os.getenv('TRAVIS', None):
-	# Configuration for travis
+	#################################################################################
+	# DO NOT EDIT this. This configuration is only used when submited to travis-CI ##
+	#################################################################################
 	SECRET_KEY = "SecretKeyForUseOnTravis"
 	DEBUG = False
 	TEMPLATE_DEBUG = True
@@ -38,20 +40,21 @@ if os.getenv('TRAVIS', None):
 			# 'PORT': '3306',
 		}
 else:
-    #Non-travis DB configuration goes here
-    ### Please edit to fit your database config!
-    DATABASES['default'] = {
-            'ENGINE': 'django.db.backends.mysql',
-            # 'NAME': 'mtest_django',  #### This is for manual testing
-            'NAME': 'django',
-	        'TEST': {
-	            'NAME': 'test_django',
-	            },            
-            'USER': 'django',
-            'PASSWORD': 'Django_passw0rd',
-            'HOST': '127.0.0.1',
-            'PORT': '3306',
-        }        
+	#Non-travis DB configuration goes here
+	#####################################################################################
+	### !!!   Please edit here to configure database backend your database config !!!####
+	#####################################################################################
+	DATABASES['default'] = {
+	    'ENGINE': 'django.db.backends.mysql', #### Use of a MySQL as backend is assumed here.
+	    'NAME': 'django',   		  #### Name of the MySQL database goes in here.
+		'TEST': {
+		    'NAME': 'test_django',        #### Name of the MySQL database for testing goes in here.
+		    },            
+	    'USER': 'django',   		  #### Username that Django should be using to connect to your MySQL
+	    'PASSWORD': 'Django_passw0rd',  	  #### Password that Django should be using to connect to your MySQL
+	    'HOST': '127.0.0.1',   		  #### We are assuming a local MySQL (localhost) is being used
+	    'PORT': '3306',	   	     	  #### MySQL is default to run on 3306
+	}        
 
 
 ALLOWED_HOSTS += [
