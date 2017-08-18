@@ -55,12 +55,11 @@ CREATE DATABASE "django" CHARACTER SET utf8;
 CREATE USER "django"@"localhost" IDENTIFIED BY "Django_passw0rd";
 
 #### This grants appropriate privileges to the user "django"@"localhost"
-GRANT ALL PRIVILEGES on django.* TO django"@"localhost"
+GRANT ALL PRIVILEGES on django.* TO django"@"localhost";
 
-#### Create a separate test database and grant access to django.
+#### Create a separate test database and grant access to django
 CREATE DATABASE "test_django" CHARACTER SET utf8;  
-GRANT ALL PRIVILEGES on test_django.* TO django"@"localhost"
-
+GRANT ALL PRIVILEGES on test_django.* TO django"@"localhost";
 ```
 
 It's also possible to exceute this MySQL statement in bash shell, although you will have to strip the quotes (" or ') off the MySQL command. (Remember to fill "{your username}" with "root" or whatever MySQL user with enough privilege):
@@ -69,7 +68,7 @@ mysql -u{your username} -p -e "CREATE DATABASE django CHARACTER SET utf8;"
 ```
 
 #### Configure Django to use MySQL
-The connection to SQL backend is stored in the ["init/django_settings.py"]() (which will gets concatenated to "rootsite/rootsite/settings.py" to overwrite the default config.) We should edit this file accordingly to reflect the MySQL configuration, including:
+The connection to SQL backend is stored in the ["init/django_settings.py"](https://github.com/CATH-summer-2017/django_CATH/blob/master/init/django_settings.py) (which will gets concatenated to "rootsite/rootsite/settings.py" to overwrite the default config.) We should edit this file accordingly to reflect the MySQL configuration, including:
   * "NAME": name of the database to be used by Django (e.g: "django" )
   * "USER","PASSWORD": credentials that will be used by Django to access the MySQL
   * "TEST":{"NAME"} : name of the test database to be used by Django (e.g: "test_django" )
@@ -94,7 +93,7 @@ Installation
   ```sh
   export PDBlib=$PWD/rootsite/tst/static/temppdbs   ### This is the PDB library that comes with the repository
   ```
-1. Configure your database connection (MySQL) as [previously described]() and edit ```init/django_settings.py``` accordingly.
+1. Configure your database connection (MySQL) as [previously described](configure-mysql) and edit ```init/django_settings.py``` accordingly.
 
 Here we update the config for "rootsite" by appending with those in ```init/```. This should only be done by once, and any modification should be made to config files directly afterwards at ```rootsite/rootsite/settings.py```
 
