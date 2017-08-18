@@ -10,9 +10,9 @@ Also check [wiki](https://github.com/CATH-summer-2017/django_CATH/wiki) of this 
 
 # Prerequisite
 ------
-Preferably you should start a virtual environment to keep everything trackable.
+**Preferably you should start a virtual environment to keep everything trackable.**
 
-### Django > 1.8
+### 1. Django > 1.8
 You should have Django installed before installation.
 Install Django with
 ```sh
@@ -20,10 +20,10 @@ pip install Django==1.11.* --user
 ```
 If for whatever reason this fails, you may try `apt insatll python-django` but please do check the Django version is higher than 1.8. Or you can download .whl from [Django-1.11.4-py2.py3-none-any.whl](https://pypi.python.org/packages/fc/fb/01e0084061c50f1160c2db5565ff1c3d8d76f2a76f67cd282835ee64e04a/Django-1.11.4-py2.py3-none-any.whl#md5=71cf96f790b1e729c8c1a95304971341)  and do `wheel install Django-1.11.4-py2.py3-none-any.whl` .
 
-### MySQL
+###  2. MySQL
 Django uses a SQL as its backend to store data. Django_CATH has been developed with MySQL but it is possible to switch to PostgreSQL or SQLite since [Django](https://docs.djangoproject.com/en/1.11/ref/settings/#databases) offers native support to these databases. 
 
-#### INSTALLING MySQL
+##### INSTALLING MySQL
 
 Install a local MySQL via
 ```sh
@@ -36,7 +36,7 @@ You might need this package on top of a working MySQL
 sudo apt-get install libmysqlclient-dev
 ```
 
-#### Configure MySQL
+##### Configure MySQL
 
 To setup Django_CATH, we need a running MySQL server to which Django_CATH can talk and make changes. It's advised to:
   * Create a separate SQL database for Django
@@ -67,7 +67,7 @@ It's also possible to exceute this MySQL statement in bash shell, although you w
 mysql -u{your username} -p -e "CREATE DATABASE django CHARACTER SET utf8;"
 ```
 
-#### Configure Django to use MySQL
+##### Configure Django to use MySQL
 The connection to SQL backend is stored in the ["init/django_settings.py"](https://github.com/CATH-summer-2017/django_CATH/blob/master/init/django_settings.py) (which will gets concatenated to "rootsite/rootsite/settings.py" to overwrite the default config.) We should edit this file accordingly to reflect the MySQL configuration, including:
   * "NAME": name of the database to be used by Django (e.g: "django" )
   * "USER","PASSWORD": credentials that will be used by Django to access the MySQL
