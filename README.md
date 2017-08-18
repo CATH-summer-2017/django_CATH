@@ -90,7 +90,7 @@ Python: 2.7.0
   ```
 2. clone this reposiory into your site dir ("rootsite") with the name "tst"
   ```sh
-  git clone https://github.com/CATH-summer-2017/django_CATH.git rootsite/tst
+  git clone https://github.com/CATH-summer-2017/django_CATH.git $BASE/rootsite/tst
   ```
 3. Set environment variable $PDBlib to where you store your PDB's. Preferably add this line to your bash profile like '~/.bashrc'
   ```sh
