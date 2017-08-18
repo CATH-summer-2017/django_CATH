@@ -55,11 +55,11 @@ CREATE DATABASE "django" CHARACTER SET utf8;
 CREATE USER "django"@"localhost" IDENTIFIED BY "Django_passw0rd";
 
 #### This grants appropriate privileges to the user "django"@"localhost"
-GRANT ALL PRIVILEGES on django.* TO django"@"localhost";
+GRANT ALL PRIVILEGES on django.* TO "django"@"localhost";
 
 #### Create a separate test database and grant access to django
 CREATE DATABASE "test_django" CHARACTER SET utf8;  
-GRANT ALL PRIVILEGES on test_django.* TO django"@"localhost";
+GRANT ALL PRIVILEGES on test_django.* TO "django"@"localhost";
 ```
 
 It's also possible to exceute this MySQL statement in bash shell, although you will have to strip the quotes (" or ') off the MySQL command. (Remember to fill "{your username}" with "root" or whatever MySQL user with enough privilege):
