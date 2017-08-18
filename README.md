@@ -79,11 +79,14 @@ Python: 2.7.0
 
 # Installation
 ------
-
+0. It's always a good idea to set a $BASE to aviod ambiguity
+  ```sh
+  BASE=$PWD ### set $BASE to current directory
+  ```
 1. Ensure you have a working Django site.
   * If not, create one with
   ```sh
-  django-admin startproject rootsite
+  django-admin startproject rootsite   ### This will try to create a folder "rootsite" and stuff it with a basic django server.
   ```
 2. clone this reposiory into your site dir ("rootsite") with the name "tst"
   ```sh
@@ -91,28 +94,26 @@ Python: 2.7.0
   ```
 3. Set environment variable $PDBlib to where you store your PDB's. Preferably add this line to your bash profile like '~/.bashrc'
   ```sh
-  export PDBlib=$PWD/rootsite/tst/static/temppdbs   ### This is the PDB library that comes with the repository
-  export SEQlib=$PWD/rootsite/tst/static/tempseqs   ### This is the PDB library that comes with the repository
+  export PDBlib=$BASE/rootsite/tst/static/temppdbs   ### This is the PDB library that comes with the repository
+  export SEQlib=$BASE/rootsite/tst/static/tempseqs   ### This is the PDB library that comes with the repository
   ```
-4. Configure your database connection (MySQL) as [previously described](#configure-mysql) and edit ```init/django_settings.py``` [accordingly](#configure-django-to-use-mysql).
+4. Configure your database connection (MySQL) as [previously described](#configure-mysql) and edit ```$BASE/rootsite/tst/init/django_settings.py``` [accordingly](#configure-django-to-use-mysql).
 
-After editing the ```init/django_settings.py```, we concatenate it to the end of ```rootsite/rootsite/settings.py``` to overwrite the database settings. This should only be done by once, and any further modification should be made directly to ```rootsite/rootsite/settings.py```
+After editing the ```$BASE/rootsite/init/django_settings.py```, we concatenate it to the end of ```$BASE/rootsite/rootsite/settings.py``` to overwrite the database settings. This should only be done by once, and any further modification should be made directly to ```$BASE/rootsite/rootsite/settings.py```
 
 ```sh
-cp rootsite/tst/init . -r
-cat init/django_settings.py >> rootsite/rootsite/settings.py
-cat init/django_urls.py >> rootsite/rootsite/urls.py     #### We also need to concatenate to overwrite the rootsite/urls.py
-rm init -rf
+cat $BASE/rootsite/tst/init/django_settings.py >> $BASE/rootsite/rootsite/settings.py
+cat $BASE/rootsite/tst/init/django_urls.py >> $BASE/rootsite/rootsite/urls.py     #### We also need to concatenate to overwrite the $BASE/rootsite/rootsite/urls.py
 ```
 
 5. Finally, install dependencies with:
 ```
-pip install -r rootsite/tst/requirements.txt
+pip install -r $BASE/rootsite/tst/requirements.txt
 ```
 
 6. Test your installation with:
 ```sh
-cd rootsite
+cd $BASE/rootsite
 ./manage.py migrate tst  #### create the SQL schema
 ./manage.py shell < tst/dbscript/initnodes.py   #### Init node tree from a S35 list
 ./manage.py shell < tst/dbscript/struct2S.py    #### Caculate structure-based statistics from structure in $PDBlib
