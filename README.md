@@ -21,6 +21,10 @@ pip install Django==1.11.* --user
 If for whatever reason this fails, you may try `apt insatll python-django` but please do check the Django version is higher than 1.8. Or you can download .whl from [Django-1.11.4-py2.py3-none-any.whl](https://pypi.python.org/packages/fc/fb/01e0084061c50f1160c2db5565ff1c3d8d76f2a76f67cd282835ee64e04a/Django-1.11.4-py2.py3-none-any.whl#md5=71cf96f790b1e729c8c1a95304971341)  and do `wheel install Django-1.11.4-py2.py3-none-any.whl` .
 
 ### MySQL
+Django uses a SQL as its backend to store data. Django_CATH has been developed with MySQL but it is possible to switch to PostgreSQL or SQLite since [Django](https://docs.djangoproject.com/en/1.11/ref/settings/#databases) offers native support to these databases. 
+
+#### INSTALLING MySQL
+
 Install a local MySQL via
 ```sh
 sudo apt-get install mysql-client
@@ -31,6 +35,44 @@ You might need this package on top of a working MySQL
 ```sh
 sudo apt-get install libmysqlclient-dev
 ```
+
+#### Configure MySQL
+
+To setup Django_CATH, we need a running MySQL server to which Django_CATH can talk and make changes. It's advised to:
+  * Create a separate SQL database for Django
+  * Create a separate test database for Django
+  * Create a separate SQL user for Django
+  * Grant appropriate privileges to the SQL user for Django 
+
+We show a MySQL example here:
+
+
+```sql
+#### This creates a separate SQL database named "django"
+CREATE DATABASE "django" CHARACTER SET utf8;  
+
+#### This creates a new MySQL user named "django" with password as "Django_passw0rd"
+CREATE USER "django"@"localhost" IDENTIFIED BY "Django_passw0rd";
+
+#### This grants appropriate privileges to the user "django"@"localhost"
+GRANT ALL PRIVILEGES on django.* TO django"@"localhost"
+
+#### Create a separate test database and grant access to django.
+CREATE DATABASE "test_django" CHARACTER SET utf8;  
+GRANT ALL PRIVILEGES on test_django.* TO django"@"localhost"
+
+```
+
+It's also possible to exceute this MySQL statement in bash shell, although you will have to strip the quotes (" or ') off the MySQL command. (Remember to fill "{your username}" with "root" or whatever MySQL user with enough privilege):
+```sh
+mysql -u{your username} -p -e "CREATE DATABASE django CHARACTER SET utf8;"
+```
+
+#### Configure Django to use MySQL
+The connection to SQL backend is stored in the ["init/django_settings.py"]() (which will gets concatenated to "rootsite/rootsite/settings.py" to overwrite the default config.) We should edit this file accordingly to reflect the MySQL configuration, including:
+  * "NAME": name of the database to be used by Django (e.g: "django" )
+  * "USER","PASSWORD": credentials that will be used by Django to access the MySQL
+  * "TEST":{"NAME"} : name of the test database to be used by Django (e.g: "test_django" )
 
 Compatibility
 -----
@@ -52,19 +94,15 @@ Installation
   ```sh
   export PDBlib=$PWD/rootsite/tst/static/temppdbs   ### This is the PDB library that comes with the repository
   ```
-1. Configure your database connection (MySQL) in ```init/django_settings.py```
-Update the config for rootsite by appending with those in ```init/```. This should only be done by once, and any modification should be made to config files directly afterwards. (This is not the optimal solution but save it for now)
+1. Configure your database connection (MySQL) as [previously described]() and edit ```init/django_settings.py``` accordingly.
+
+Here we update the config for "rootsite" by appending with those in ```init/```. This should only be done by once, and any modification should be made to config files directly afterwards at ```rootsite/rootsite/settings.py```
+
 ```sh
 cp rootsite/tst/init . -r
 cat init/django_settings.py >> rootsite/rootsite/settings.py
 cat init/django_urls.py >> rootsite/rootsite/urls.py
 rm init -rf
-```
-and remember to grant access to your specified user "django"
-```sh 
-#### run commands with appropriate --user and --password
-mysql -e 'create database django charset utf8; grant  all privileges on django.* to 'django'@'localhost';'
-mysql -e 'create database test_django charset utf8; grant all privileges on test_django.* to 'django'@'localhost';'
 ```
 
 1. Finally, install dependencies with:
