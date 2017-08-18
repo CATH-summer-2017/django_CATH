@@ -8,7 +8,7 @@ Check [`domchop`](https://github.com/CATH-summer-2017/domchop) (Especially the [
 
 Also check [wiki](https://github.com/CATH-summer-2017/django_CATH/wiki) of this repo for some background.
 
-Prerequisite
+# Prerequisite
 ------
 Preferably you should start a virtual environment to keep everything trackable.
 
@@ -73,28 +73,28 @@ The connection to SQL backend is stored in the ["init/django_settings.py"](https
   * "USER","PASSWORD": credentials that will be used by Django to access the MySQL
   * "TEST":{"NAME"} : name of the test database to be used by Django (e.g: "test_django" )
 
-Compatibility
+# Compatibility
 -----
 Python: 2.7.0
 
-Installation
+# Installation
 ------
 
 1. Ensure you have a working Django site.
-  1. If not, create one with
+  * If not, create one with
   ```sh
   django-admin startproject rootsite
   ```
-1. clone this reposiory into your site dir ("rootsite") with the name "tst"
+2. clone this reposiory into your site dir ("rootsite") with the name "tst"
   ```sh
   git clone https://github.com/CATH-summer-2017/django_CATH.git rootsite/tst
   ```
-1. Set environment variable $PDBlib to where you store your PDB's. Preferably add this line to your bash profile like '~/.bashrc'
+3. Set environment variable $PDBlib to where you store your PDB's. Preferably add this line to your bash profile like '~/.bashrc'
   ```sh
   export PDBlib=$PWD/rootsite/tst/static/temppdbs   ### This is the PDB library that comes with the repository
   export SEQlib=$PWD/rootsite/tst/static/tempseqs   ### This is the PDB library that comes with the repository
   ```
-1. Configure your database connection (MySQL) as [previously described](configure-mysql) and edit ```init/django_settings.py``` accordingly.
+4. Configure your database connection (MySQL) as [previously described](configure-mysql) and edit ```init/django_settings.py``` accordingly.
 
 Here we update the config for "rootsite" by appending with those in ```init/```. This should only be done by once, and any modification should be made to config files directly afterwards at ```rootsite/rootsite/settings.py```
 
@@ -105,12 +105,12 @@ cat init/django_urls.py >> rootsite/rootsite/urls.py
 rm init -rf
 ```
 
-1. Finally, install dependencies with:
+5. Finally, install dependencies with:
 ```
 pip install -r rootsite/tst/requirements.txt
 ```
 
-1. Test your installation with:
+6. Test your installation with:
 ```sh
 cd rootsite
 ./manage.py migrate tst  #### create the SQL schema
