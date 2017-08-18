@@ -94,14 +94,14 @@ Python: 2.7.0
   export PDBlib=$PWD/rootsite/tst/static/temppdbs   ### This is the PDB library that comes with the repository
   export SEQlib=$PWD/rootsite/tst/static/tempseqs   ### This is the PDB library that comes with the repository
   ```
-4. Configure your database connection (MySQL) as [previously described](configure-mysql) and edit ```init/django_settings.py``` [accordingly](#configure-django-to-use-mysql).
+4. Configure your database connection (MySQL) as [previously described](#configure-mysql) and edit ```init/django_settings.py``` [accordingly](#configure-django-to-use-mysql).
 
-Here we update the config for "rootsite" by appending with those in ```init/```. This should only be done by once, and any modification should be made to config files directly afterwards at ```rootsite/rootsite/settings.py```
+After editing the ```init/django_settings.py```, we concatenate it to the end of ```rootsite/rootsite/settings.py``` to overwrite the database settings. This should only be done by once, and any further modification should be made directly to ```rootsite/rootsite/settings.py```
 
 ```sh
 cp rootsite/tst/init . -r
 cat init/django_settings.py >> rootsite/rootsite/settings.py
-cat init/django_urls.py >> rootsite/rootsite/urls.py
+cat init/django_urls.py >> rootsite/rootsite/urls.py     #### We also need to concatenate to overwrite the rootsite/urls.py
 rm init -rf
 ```
 
