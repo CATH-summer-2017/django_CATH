@@ -18,6 +18,9 @@ p_header = re.compile("NAME.*?\n")
 p_hmmlen = re.compile('LENG  (\d+)\n')
 p_cathdomain = re.compile("([0-9,a-z,A-Z]{7})")
 
+notlist = lambda lst: [not x for x in lst]
+
+
 levels=[ None,
 'root',
 'Class',
