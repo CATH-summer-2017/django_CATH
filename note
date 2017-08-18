@@ -1,0 +1,15 @@
+
+
+crosshit page 
+sf1 sf2 db_source
+
+import urllib
+
+param_s = urllib.urlencode(
+	{'sf1': sf1,
+	 'sf2': sf2,
+	 'db_source':'Crosshits_v4_1_0'}
+)
+uri += '?' + param_s
+
+#http://xhits.cathdb.info/crosshits.php?sf2=2.130.10.80&sf1=2.120.10.80&db_source=Crosshits_v4_1_0
