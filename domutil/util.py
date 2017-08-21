@@ -17,8 +17,35 @@ p_resCount = re.compile("Number of all residues in MODEL *: *([0-9]*)")
 p_header = re.compile("NAME.*?\n")
 p_hmmlen = re.compile('LENG  (\d+)\n')
 p_cathdomain = re.compile("([0-9,a-z,A-Z]{7})")
+p_cathFAheader=re.compile('\|([0-9,a-z,A-Z]*)\/')
 
+# notlist = lambda lst: [not x for x in lst]
 notlist = lambda lst: [not x for x in lst]
+listNOT = lambda lst: [not x for x in lst]
+listAND=lambda alst,blst: [ x & y for x,y in izip(alst,blst)]
+listANDNOT=lambda alst,blst: [ x and not y for x,y in izip(alst,blst)]
+
+hmms2hit_ids = lambda hmms: np.expand_dims(
+    np.array(
+    [list(
+        hmm.hits.values_list("id", flat = True)
+    )
+     for hmm in hmms]
+), axis = 1)
+
+hmms2hit_ids_para = lambda hmms,pool: np.expand_dims(
+    np.array(
+    [list(
+        hmm.hits.values_list("id", flat = True)
+    )
+     for hmm in hmms]
+), axis = 1)
+
+
+def reset_database_connection():
+    from django import db
+    db.close_old_connections()
+
 
 
 levels=[ None,
@@ -69,10 +96,15 @@ def get_gzip(url = 'http://download.cathdb.info/cath/releases/daily-release/newe
     return data
 
 import sys
+# import time
 class counter():
     def __init__(self, lst, per = 100, fper = 1, INF = False, stdout = sys.stdout,
     	ifprint = 1,
+        threshold = 0.1,
+        step = 1,
+
         prefix = '' ):
+        import time
         # self.lst = list(lst);
         # self.imax= len(lst)
         if INF:
@@ -88,15 +120,20 @@ class counter():
         self.stdout = stdout
         self.ifprint = ifprint
         self.prefix = prefix 
+        self.t0 = time.time()
+        self.threshold = threshold 
+        self.step = step
 
 
-    def count(self):
+    def count(self, step = None ):
         if not self.i % self.per and self.ifprint:
             msg = '%d of %d'%(self.i,self.imax)
             msg = self.prefix + msg
             print >> sys.__stdout__, msg
             print >> self.stdout, msg
-        self.i += 1
+        # if not step:
+        #     step = self.step
+        self.i += (step or self.step)
     def fail(self, msg, ins = None):
      #    if not self.f % self.fper:
         if msg:
@@ -109,8 +146,87 @@ class counter():
             self.e = e
         except:
             pass
-    def finish(self):
+    def summary(self, behave = '', INPUT = ''):
         self.imax = self.i
+        self.t1 = time.time()
+        self.dur = self.t1 - self.t0
+        self.frate = self.f / float( self.i ) 
+        print >> self.stdout, '\n[SUMMARY]:%s' % self.prefix
+        print >> self.stdout, '\t[Task]: finshed %s from %s ' % (behave, INPUT)
+        print >> self.stdout, '\t[Failrate]%d instances of %d failed, ( %2.2f%% )' % (self.f, self.i, 100 * self.frate )
+        print >> self.stdout, '\t[Duration]:Ended after %.4f sec' % ( self.dur )   # len(lst)d
+        if self.frate > self.threshold:
+            msg = 'fail rate is too high: expected < 10%%, actual: %2.2f%%' % (100 * self.frate)
+            raise Exception( msg )
+
+##### Parallel processing
+import multiprocessing as mp
+from multiprocessing.managers import BaseManager, SyncManager
+class MyManager(SyncManager): pass
+MyManager.register('counter',counter)
+
+
+from tempfile import TemporaryFile , mkdtemp
+
+def file_len(fname):
+    with open(fname) as f:
+        for i, l in enumerate(f):
+            pass
+    return i + 1
+
+def split_file(fname, linecount = None, number = None):
+    if linecount and number:
+        raise Exception('You can only specify one of linecount or number')
+    f_handles = []
+    tempdir = mkdtemp(prefix = '/tmp/feng')
+    
+    with open(fname) as f:
+        lines = f.readlines()
+    lcount = len(lines)
+       
+    if number:
+#         with open(fname) as f:
+#             lines = f.readlines()
+        lcount = len(lines)
+        nlcount = lcount // number + 1
+        idxs = range(0, lcount, nlcount)
+        for i,idx in enumerate(idxs):
+#             f = TemporaryFile()
+            temp_fname = tempdir + '/%d'%i
+            f = open(temp_fname, 'w+')
+            f.write( ''.join(lines[idx: idx+nlcount]) )
+            f.seek(0)
+            f_handles.append(temp_fname)
+    if linecount:
+        idx = 0
+        i   = 0
+        nlcount = linecount
+        while 1:
+            temp_fname = tempdir + '/%d'%i
+            f = open(temp_fname, 'w+' )
+            f.write( ''.join(lines[idx:idx + nlcount]) )
+            f.seek(0)
+            f_handles.append(temp_fname)
+            if idx + nlcount+1 >= lcount: 
+                break
+            else:
+                idx += nlcount
+                i   += 1
+    return f_handles
+if __name__ == '__test__':
+    ##### !!! "test.fa" is yet to be deposited !!! #####
+    print "[TESTING]:split_file()"
+    INPUT=full('$SEQlib/test.fa') 
+    lc1 = len(open(INPUT,'r').read())
+    f_handles = split_file( INPUT, linecount = 1000 )
+    lc2 = len(''.join( open(f,'r').read() for f in f_handles))
+    f_handles = split_file( INPUT, number = 10 )
+    lc3 = len(''.join( open(f,'r').read() for f in f_handles))
+    assert  lc3 == lc2 == lc1
+    print "[PASSED]:split_file()"
+
+
+
 
 import csv
 
@@ -427,6 +543,14 @@ def acc_mapper_cath(hit):
 
 
 
+def ISS_normalise(hc1, hc2, hcboth):
+    # if len(hc1) != 1 or isinstance(hc1,np.array):
+    # else:
+    log1 =  np.log10( hc1 + 1) 
+    log2 =  np.log10( hc2 + 1) 
+    log3 =  np.log10( hcboth + 1) 
+    norm = (log1 + log2) / 2 - log3 
+    return norm
 
 
 
@@ -434,6 +558,7 @@ def acc_mapper_cath(hit):
 
 import random
 import itertools
+from itertools import izip
 
 # def using_nonzero(x):
 #     rows,cols = x.nonzero()
@@ -458,3 +583,8 @@ def using_tocoo_izip(x):
     return it   
     # for i,j,v in itertools.izip(cx.row, cx.col, cx.data):
     #     yield (i,j,v)
+
+def sort_coo(m,order = 1):
+    tuples = izip(m.row, m.col, m.data)
+    return sorted(tuples, key=lambda x: order * (x[2]) )
+

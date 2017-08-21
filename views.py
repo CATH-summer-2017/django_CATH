@@ -26,12 +26,12 @@ import sys,os
 # import os
 
 import cPickle as pk
-if 'D_raw' not in locals().keys():
-    fname = 'data/ISS_raw'
-    D_raw = pk.load(open(fname, 'rb')).todok()
-if 'D_norm' not in locals().keys():
-    fname = 'data/ISS_norm'
-    D_norm = pk.load(open(fname, 'rb')).todok()
+# if 'D_raw' not in locals().keys():
+#     fname = 'data/ISS_raw'
+#     D_raw = pk.load(open(fname, 'rb')).todok()
+# if 'D_norm' not in locals().keys():
+#     fname = 'data/ISS_norm'
+#     D_norm = pk.load(open(fname, 'rb')).todok()
 
 #### Displayed shorthands for any field
 field_short = {

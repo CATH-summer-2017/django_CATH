@@ -280,7 +280,7 @@ class seqDB(models.Model):
 
 class sequence(models.Model):
 	seqDB = models.ForeignKey(seqDB, on_delete= models.CASCADE);
-	acc = models.CharField(  max_length=10, db_index = True)
+	acc = models.CharField(  max_length=12, db_index = True)
 	subversion = models.IntegerField(default = 0)
 	length = models.IntegerField()
 	cath_node = models.ForeignKey(classification, null = True, on_delete= models.CASCADE);
