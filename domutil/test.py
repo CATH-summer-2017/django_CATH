@@ -23,7 +23,7 @@ def test__raw(D_raw, hmms):
         if c.i == 5:
             break
             
-def test__norm(D_curr, hmms):
+def test__norm(D_curr, hmms, norm_func = ISS_normalise):
     it = using_tocoo_izip(D_curr)
     c = counter([],INF = 1)
     for x,y,v_act in it:
@@ -36,7 +36,7 @@ def test__norm(D_curr, hmms):
         interhits = set(hmm1hits) & set(hmm2hits)
         intercount = len(interhits)
         
-        v_exp = ISS_normalise( len(hmm1hits), len(hmm2hits), intercount)
+        v_exp = norm_func( len(hmm1hits), len(hmm2hits), intercount)
 #         print v
 #         print intercount
         msg = '[OK] %s against %s overlaps:: Expected:%s, Actual:%s'%(hmm1,hmm2, v_exp, v_act )

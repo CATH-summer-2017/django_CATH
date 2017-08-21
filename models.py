@@ -205,6 +205,7 @@ class domain(models.Model):
 	# classification =  models.ForeignKey(classification, on_delete= models.CASCADE);
 	classification =  models.OneToOneField(classification, on_delete= models.CASCADE);
 
+
 	def __str__(self):
 		return self.domain_id
 
@@ -284,7 +285,6 @@ class sequence(models.Model):
 	subversion = models.IntegerField(default = 0)
 	length = models.IntegerField()
 	cath_node = models.ForeignKey(classification, null = True, on_delete= models.CASCADE);
-
 	def __str__(self):
 		return  "%s from %s" % (self.acc, str(seqDB) )
 	def full_acc(self):
@@ -358,3 +358,12 @@ class hit4hmm2hsp(models.Model):
 
 	
 
+
+class hit4cath2cath(models.Model):
+	node1 = models.ForeignKey( classification, on_delete = models.CASCADE, related_name = 'node1')
+	node2 = models.ForeignKey( classification, on_delete = models.CASCADE, related_name = 'node2')
+	ISS_raw = models.IntegerField( default = None  )
+	ISS_norm = models.FloatField( default = None )
+	seqDB = models.ForeignKey(seqDB, on_delete= models.CASCADE);
+	def __str__(self):
+		return "Node 1: %s,  Node 2: %s "

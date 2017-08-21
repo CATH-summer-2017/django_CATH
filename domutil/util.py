@@ -25,28 +25,16 @@ listNOT = lambda lst: [not x for x in lst]
 listAND=lambda alst,blst: [ x & y for x,y in izip(alst,blst)]
 listANDNOT=lambda alst,blst: [ x and not y for x,y in izip(alst,blst)]
 
-hmms2hit_ids = lambda hmms: np.expand_dims(
-    np.array(
-    [list(
-        hmm.hits.values_list("id", flat = True)
-    )
-     for hmm in hmms]
-), axis = 1)
-
-hmms2hit_ids_para = lambda hmms,pool: np.expand_dims(
-    np.array(
-    [list(
-        hmm.hits.values_list("id", flat = True)
-    )
-     for hmm in hmms]
-), axis = 1)
 
 
 def reset_database_connection():
     from django import db
     db.close_old_connections()
 
-
+import cPickle as pk
+def pk_load(vname,cache_dir = 'data/'):
+    fname = cache_dir + vname
+    return pk.load(open(fname, 'rb'))
 
 levels=[ None,
 'root',
@@ -552,6 +540,14 @@ def ISS_normalise(hc1, hc2, hcboth):
     norm = (log1 + log2) / 2 - log3 
     return norm
 
+def ISS_normalise_new(hc1, hc2, hcboth):
+    # if len(hc1) != 1 or isinstance(hc1,np.array):
+    # else:
+    log1 =  np.log10( hc1 + 1) 
+    log2 =  np.log10( hc2 + 1) 
+    log3 =  np.log10( hcboth + 1) 
+    norm = 2 * log3 / (log1 + log2)  
+    return norm
 
 
 ##### iterating over COO sparse matrix (10 times faster than DOK matrix)
@@ -588,3 +584,23 @@ def sort_coo(m,order = 1):
     tuples = izip(m.row, m.col, m.data)
     return sorted(tuples, key=lambda x: order * (x[2]) )
 
+
+
+####################################################
+####### Toy function to expand hmm into lists  #####
+####################################################
+hmms2hit_ids = lambda hmms: np.expand_dims(
+    np.array(
+    [list(
+        hmm.hits.values_list("id", flat = True)
+    )
+     for hmm in hmms]
+), axis = 1)
+
+hmms2hit_ids_para = lambda hmms,pool: np.expand_dims(
+    np.array(
+    [list(
+        hmm.hits.values_list("id", flat = True)
+    )
+     for hmm in hmms]
+), axis = 1)
