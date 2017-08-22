@@ -13,6 +13,9 @@ from django.templatetags.static import static
 # Create your models here.
 
 from CATH_API.lib import *
+import urllib
+from .domutil.util import *
+
 
 levels=[ None,
 'root',
@@ -289,6 +292,14 @@ class sequence(models.Model):
 		return  "%s from %s" % (self.acc, str(seqDB) )
 	def full_acc(self):
 		return "%s.%d" % ( self.acc, self.subversion)
+	def GETcath_node(self):
+		try:
+			d = domain.objects.get(self.acc)
+			node = d.classification
+		except:
+			node = None
+		return node
+
 
 class HSPfrag(models.Model):
 	### The HSPfrag may be discontinuous in itself. HMMsearch only outputs the start and end, which is noted here.
@@ -315,7 +326,7 @@ class HMMprofile(models.Model):
 	# start = models.IntegerField(null = True)
 	# end = models.IntegerField( null = True)
 
-	cath_node = models.ForeignKey(classification, on_delete = models.CASCADE);
+	cath_node = models.OneToOneField(classification, on_delete = models.CASCADE);
 	# cath_node = models.OneToOneField(classification, on_delete = models.CASCADE);
 	# hitseq = models.ManyToManyField( HSPfrag )
 	hits = models.ManyToManyField( sequence, through = 'hit4hmm2hsp' )
@@ -358,7 +369,7 @@ class hit4hmm2hsp(models.Model):
 
 	
 
-
+bfmt = '<b>%s</b>' 
 class hit4cath2cath(models.Model):
 	node1 = models.ForeignKey( classification, on_delete = models.CASCADE, related_name = 'node1')
 	node2 = models.ForeignKey( classification, on_delete = models.CASCADE, related_name = 'node2')
@@ -366,4 +377,70 @@ class hit4cath2cath(models.Model):
 	ISS_norm = models.FloatField( default = None )
 	seqDB = models.ForeignKey(seqDB, on_delete= models.CASCADE);
 	def __str__(self):
-		return "Node 1: %s,  Node 2: %s "
+		# return "Node 1: %s,  Node 2: %s,  "
+		# basefmt = 
+		raw_msg = "[CATH_CATH_ISShit<]:[Node1: %s ,Node2: %s]< raw_ISS: %d, norm_ISS: %.2f >(from  %s )" % (
+			self.node1,
+			self.node2, 
+			self.ISS_raw, 
+			self.ISS_norm,
+			self.seqDB)
+		html_msg = "[<b>CATH_CATH_ISShit</b>]:[Node1: %s ,Node2: %s]< raw_ISS: %s, norm_ISS: %s  >(from %s )" % (
+			bfmt % self.node1,
+			bfmt % self.node2, 
+			bfmt % ( '%d' % self.ISS_raw ) , 
+			bfmt % ( '%.2f'%self.ISS_norm) ,
+			bfmt % self.seqDB)
+		return (html_msg)
+
+	def __str__(self):
+		# return "Node 1: %s,  Node 2: %s,  "
+		# basefmt = 
+		raw_msg = "[CATH_CATH_ISShit]:[Node1: %s ,Node2: %s]< raw_ISS: %d, norm_ISS: %.2f >(from  %s )" % (
+			self.node1,
+			self.node2, 
+			self.ISS_raw, 
+			self.ISS_norm,
+			self.seqDB)
+		return (raw_msg)
+	def xhit_urled(self, db_source = "Crosshits_v4_1_0",**kwargs):
+		"http://xhits.cathdb.info/crosshits.php?sf2=2.130.10.80&sf1=2.120.10.80&db_source=Crosshits_v4_1_0"
+		baseurl = "http://xhits.cathdb.info/crosshits.php"
+		# url = "http://www.cathdb.info/version/{:s}/domain/{:s}/".format(version, self.domain_id)
+		# url = self.node1.superfamily()
+		pdict = kwargs
+		pdict.update(
+			{'sf1': self.node1.superfamily(),
+			 'sf2': self.node2.superfamily(),
+			 'db_source': db_source,
+			 }
+		)
+		# if "db_source" not in kwargs.keys():
+		pstr = urllib.urlencode(pdict)
+		url = "%s?%s" % (baseurl,pstr)
+
+		return a_href( db_source , url )
+	def local_CCXhit(self):
+		param = urllib.urlencode( {
+			"node1__id":self.node1.id,
+			"node2__id":self.node2.id,
+			} )
+		url = reverse('CCXhit_handler',args=[])
+		return a_href("local_page", "%s?%s" % (url , param) )
+	def compare_hitlist(self):
+
+		hmmid1 = self.node1.hmmprofile.id if self.node1.level.letter == 'S' else None
+		hmmid2 = self.node2.hmmprofile.id if self.node2.level.letter == 'S' else None
+		baseurl = reverse("hmm_compare",args=[])
+		pstr = urllib.urlencode( {
+			"hmm1__id":hmmid1,
+			"hmm2__id":hmmid2,
+			} )
+
+		url = "%s?%s" % (baseurl,pstr)
+
+		# rv_field()
+
+		return a_href("compare_hitlist", url)
+
+		# self.node1.id

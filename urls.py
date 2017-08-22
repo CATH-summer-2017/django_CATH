@@ -10,6 +10,17 @@ urlpatterns = [
     url(r'^$', views.index, name='hello'),
 
     url(r'^test/$', views.test, name='test'),
+    url(r'^test/CCXhit$', views.test__CCXhit, name='test'),
+    url(r'^test/CCXhit_homsf$', views.test__CCXhit_homsf, name='test'),
+    url(r'^test/hmm_compare$', views.test__hmm_compare, name='test'),
+
+
+    url(r'^hmm_compare$', views.test__hmm_compare, name='hmm_compare'),
+
+
+    url(r'^CCXhit/$', views.test__CCXhit, name='CCXhit_handler'),
+
+
 
     # ex: /tst/5/
     # url(r'^(?P<question_id>[0-9]+)/$', 

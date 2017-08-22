@@ -130,6 +130,12 @@ greets = {
 		'''%greet_plothowto],
 }
 
+
+
+from django.db.models import F
+###### Prefiltering
+CCXhit = hit4cath2cath.objects.exclude(node1__parent=F("node2__parent") ) 
+
 def index(request):
 
 	output = 'index is now empty'
@@ -183,43 +189,56 @@ def view3d(request):
 
 #### Common function to render a table view
 
-def view_qset(request, query_set, orders = None, cols = None,title = None ):
+def view_qset(request, query_set, orders = None, cols = None,title = None,page_caption = None ):
+###################################################################################
+###################################################################################
+## Arguments: 1. request: the HTTP request to be rendered #########################
+##############2. query_set: The Django QuerySet instance to be tabulated ##########
+##############3. orders (optional) :  How should the query_set be ordered #########
+##############4. cols (necessary)  :  A list of attributes of an element from #####
+##############   query_set be rendered    #########################################
+##############5. title: Title of the returned HTML page ###########################
+###################################################################################
 
 	# sf_list = CATH_superfamily('v4_1_0')[1]
+	if hasattr(query_set,'model'):
+		if query_set.model == domain:
+			query_set = query_set.annotate(sf_s35cnt=Count('classification__parent__classification'))	
+			# orders = orders or ['-sf_s35cnt','-nDOPE'];
+			cols=cols or [
+			'domain_id_urled',
+			'superfamily_urled',
+			'view_chopped',
+			'sf_s35cnt',
+			'residue_count',
+			'atom_count',
+			# 'nDOPE',
+			'nbpair_count',
+			'domain_stat__maha_dist',
+			'classification__version__name',];
+			title = title or "domain collection" 
+			page_caption = page_captions["domain"]
+		if query_set.model == classification:
+			# query_set = query_set.annotate(sf_s35cnt=Count('classification__parent__classification'))	
+			# orders = orders or ['-s35_count','-nDOPE_avg'];
+			# query_set = query_set.order_by(*orders)
+			# cols=cols or ['superfamily','s35_count','rep_s35','domain_length','nDOPE'];
 
-	if query_set.model == domain:
-		query_set = query_set.annotate(sf_s35cnt=Count('classification__parent__classification'))	
-		# orders = orders or ['-sf_s35cnt','-nDOPE'];
-		cols=cols or [
-		'domain_id_urled',
-		'superfamily_urled',
-		'view_chopped',
-		'sf_s35cnt',
-		'residue_count',
-		'atom_count',
-		# 'nDOPE',
-		'nbpair_count',
-		'domain_stat__maha_dist',
-		'classification__version__name',];
-		title = title or "domain collection" 
-		page_caption = page_captions["domain"]
-	if query_set.model == classification:
-		# query_set = query_set.annotate(sf_s35cnt=Count('classification__parent__classification'))	
-		# orders = orders or ['-s35_count','-nDOPE_avg'];
-		# query_set = query_set.order_by(*orders)
-		# cols=cols or ['superfamily','s35_count','rep_s35','domain_length','nDOPE'];
+			cols=cols or [
+			'superfamily_urled',
+			's35_count',
+			's35_len_avg',
+			'nDOPE_avg',
+			'nDOPE_std'];
+			title = title or "superfamily collection"
+			page_caption = page_captions["superfamily"]
+	else: 
+		pass
 
-		cols=cols or [
-		'superfamily_urled',
-		's35_count',
-		's35_len_avg',
-		'nDOPE_avg',
-		'nDOPE_std'];
-		title = title or "superfamily collection"
-		page_caption = page_captions["superfamily"]
 	if orders:
 		query_set = query_set.order_by(*orders)
-
+	if "page_caption" not in locals().keys():
+		page_caption = "No caption is provided for this page"
 
 	context = {
 		'query_set':query_set,
@@ -235,9 +254,205 @@ def view_qset(request, query_set, orders = None, cols = None,title = None ):
 				 # 'tst/index.html',
 				 'tst/view_table.html',
 				  context)
+forward_field = {
+    'S':'cath_node__id',
+    'H':'cath_node__parent__id',
+    'T':'cath_node__parent__parent__id',
+    'A':'cath_node__parent__parent__parent__id',
+    'C':'cath_node__parent__parent__parent__parent__id',
+}
+
+reverse_field = {
+    'S':'hmmprofile__hits',
+    'H':'classification__hmmprofile__hits',
+    'T':'classification__classification__hmmprofile__hits',
+    'A':'classification__classification__classification__hmmprofile__hits',
+    'C':'classification__classification__classification__classification__hmmprofile__hits'
+}
+
+def tab__CCXhit__S35(request,qset,**kwargs):
+	cols = ['node1',
+	# 'node1__id','node2__id',
+	'node2','xhit_urled',
+	 # 'node1__hitCount',
+	'compare_hitlist',
+	  # 'node2_hitCount', 
+	  'node1__hmmprofile__hits__count',
+	  'node2__hmmprofile__hits__count',
+
+	   'ISS_raw', 'ISS_norm']
+	title = 'ISS_test'
+	# orders = []
+	response = view_qset(
+		request,
+		qset, 
+		cols = cols,
+		title = title,
+		**kwargs
+		)
+	return response 
 
 
+def cross_qset(node1__id,node2__id):
+	node1 = classification.objects.get(id = node1__id)
+	node2 = classification.objects.get(id = node2__id)
+	s35_1 = node1.classification_set.all()
+	s35_2 = node2.classification_set.all()
+	hits_id1A = set(s35_1.values_list("node1",flat = True) )
+	hits_id1B = set(s35_1.values_list("node2",flat = True) )
+	hits_id2A = set(s35_2.values_list("node1",flat = True) )
+	hits_id2B = set(s35_2.values_list("node2",flat = True) )
 
+	hits_ids = ( hits_id1A | hits_id1B)  &  ( hits_id2A | hits_id2B)
+	qset =  CCXhit.filter(id__in=hits_ids)
+	# raise Exception("here")
+
+	return qset
+
+
+def test__CCXhit(request):
+	# filters = request.GET.get('filters', {"ISS_norm__lte":0.9})
+
+	filters = request.GET or {"ISS_norm__lte":0.9}
+	# raise Exception("here")
+	kwargs = {}
+
+	if 'node1__id' in filters.keys():
+		node1__id =  filters["node1__id"]
+		node2__id =  filters["node2__id"]
+		node_ids = sorted(
+			[int(node1__id),
+			int(node2__id)
+			])
+		
+		qset = cross_qset( node_ids[0],node_ids[1])
+		# print ""
+		# raise Exception("here")
+
+		node1 = classification.objects.get(id = node1__id)
+		node2 = classification.objects.get(id = node2__id)
+
+
+		hit = hit4cath2cath.objects.get(
+			node1=node_ids[0],
+			node2=node_ids[1])
+
+
+		kwargs['page_caption'] = '''
+		<br/>Node1: %s 
+		<br/>Node2: %s
+		<br/>ISS_raw:%s
+		<br/>ISS_norm%s''' % (node1,node2, hit.ISS_raw, hit.ISS_norm)
+	else:
+		qset = CCXhit.filter(**filters) 
+
+
+	# hit4cath2cath.objects.values_list('node1__id'.'node2__id')
+	# qset = hit4cath2cath.objects.exclude(node1__parent=F("node2__parent") ) 
+	# qset = CCXhit.exclude(ISS_norm__gte=0.9) 
+
+	# qset = CCXhit.filter(ISS_norm__lte=0.9) 
+
+	qset = qset.order_by('-ISS_norm')
+	qset = qset[:500]
+	# .prefetch_related(["node1__hmmprofile","node2__hmmprofile"])
+	# qset = qset.annotate(
+	# 	# node1_hitCount = Count("node1__hmmprofile__hits"), 
+	# 	# node2_hitCount = Count("node2__hmmprofile__hits"),
+	# 		)
+	return tab__CCXhit__S35(request,qset, **kwargs)
+
+def test__hmm_compare(request,hmm1__id = None,hmm2__id = None):
+	# params = request.GET or {"hmm1__id":17150,"hmm2__id":4067}
+	hmm1__id = request.GET.get("hmm1__id",'17150')
+	hmm2__id = request.GET.get("hmm2__id",'4067')
+
+	hmm1 = HMMprofile.objects.get(id = hmm1__id)
+	hmm2 = HMMprofile.objects.get(id = hmm2__id)
+	# interhit = 
+	hitlist1 = hmm1.hit4hmm2hsp_set
+	hitlist2 = hmm2.hit4hmm2hsp_set
+	# raise Exception()
+
+	return hitlist_compare(request, hitlist1,hitlist2)
+	# pass
+
+class blankobj():
+	def __init__(self,**kwargs):
+		for k,v in kwargs.iteritems():
+			setattr(self,k,v)
+		pass
+
+def hitlist_compare(request,hitlist1,hitlist2):
+	hits1_ids = hitlist1.values_list('target',flat = True)
+	hits2_ids = hitlist2.values_list('target',flat = True)
+	inter_ids = set( hits1_ids ) & set( hits2_ids )
+	lst = zip( 
+		hitlist1.filter(target__in = inter_ids).order_by("target"),
+		hitlist2.filter(target__in = inter_ids).order_by("target"),
+		)
+	qset = [blankobj(id=i,hit1=x,hit2=y) for i,(x,y) in enumerate(lst)]
+	# for x,y
+
+	cols = [
+	'hit1__target__acc',
+	'hit1__target__GETcath_node',
+	'hit1__start',
+	'hit1__end',
+	'hit2__end',
+	'hit2__start',
+	'hit1__bitscore',
+	'hit2__bitscore',
+
+	]
+
+	title = 'ISS_hitlists'
+
+	response = view_qset(
+		request,
+		qset, 
+		cols = cols,
+		title = title,
+		)
+	return response
+
+
+def test__CCXhit_homsf(request):
+	# hit4cath2cath.objects.values_list('node1__id'.'node2__id')
+	# qset = hit4cath2cath.objects.exclude(node1__parent=F("node2__parent") ) 
+	# qset = CCXhit.exclude(ISS_norm__gte=0.9) 
+	letter = 'H'
+	rv_field = reverse_field[letter]
+	qset = CCXhit.filter(node1__level__letter='H') 
+	qset = qset.order_by('-ISS_norm')
+	qset = qset.exclude(ISS_norm__gte=0.7)
+
+	qset = qset[:1000]
+	# .prefetch_related(["node1__hmmprofile","node2__hmmprofile"])
+	# qset = qset.annotate(
+	# 	# node1_hitCount = Count("node1__hmmprofile__hits"), 
+	# 	# node2_hitCount = Count("node2__hmmprofile__hits"),
+	# 		)
+
+	cols = ['node1',
+	# 'node1__id','node2__id',
+	'node2','xhit_urled',
+	'local_CCXhit',
+	'node1__hitCount',
+	'node2__hitCount', 
+	  # 'node1__%s__count' % rv_field,
+	  # 'node2__%s__count' % rv_field,
+
+	   'ISS_raw', 'ISS_norm']
+	title = 'ISS_test'
+	# orders = []
+	response = view_qset(
+		request,
+		qset, 
+		cols = cols,
+		title = title,
+		)
+	return response 
 
 ### Visualise a collection of domain_id's
 
