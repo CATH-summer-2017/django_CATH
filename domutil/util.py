@@ -24,7 +24,10 @@ notlist = lambda lst: [not x for x in lst]
 listNOT = lambda lst: [not x for x in lst]
 listAND=lambda alst,blst: [ x & y for x,y in izip(alst,blst)]
 listANDNOT=lambda alst,blst: [ x and not y for x,y in izip(alst,blst)]
+list2dict = lambda lst: {v:i for i,v in enumerate(lst) }
 
+
+a_href = lambda text,url: "<a href='%s'>%s</a>" % (url,text)
 
 
 def reset_database_connection():
@@ -113,7 +116,7 @@ class counter():
         self.step = step
 
 
-    def count(self, step = None ):
+    def count(self, step = None, callback = None):
         if not self.i % self.per and self.ifprint:
             msg = '%d of %d'%(self.i,self.imax)
             msg = self.prefix + msg
@@ -122,6 +125,7 @@ class counter():
         # if not step:
         #     step = self.step
         self.i += (step or self.step)
+        
     def fail(self, msg, ins = None):
      #    if not self.f % self.fper:
         if msg:
