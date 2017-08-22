@@ -23,12 +23,20 @@ def getattribute_none(value, arg):
 
 def getattribute(value, arg):
     """Gets an attribute of an object dynamically from a string name"""
+    if arg.endswith("?"):
+        arg = arg[:-1]
+        callit = 1
+    else:
+        callit = 0
+
     if hasattr(value, str(arg)):
-    	attr = getattr(value, str(arg));
-    	if callable(attr):
-	        return attr();
+        attr = getattr(value, str(arg));
+        # tp = type(attr) 
+        # if callable(attr) and tp != "django.db.models.manager.Manager":
+        if callit:
+            return attr();
         else:
-        	return attr
+            return attr
     elif hasattr(value, 'has_key') and value.has_key(arg):
         return value[arg]
     elif numeric_test.match(str(arg)) and len(value) > int(arg):
