@@ -428,7 +428,40 @@ class hit4cath2cath(models.Model):
 		url = reverse('CCXhit_handler',args=[])
 		return a_href("local_page", "%s?%s" % (url , param) )
 	def compare_hitlist(self):
+		pstr = urllib.urlencode( {
+			"node1__id":self.node1.id,
+			"node2__id":self.node2.id,
+			} )
+		# url = reverse('CCXhit_handler',args=[])
+		baseurl = reverse("hitlist_compare",args=[])
+		url = "%s?%s" % (baseurl,pstr)
 
+		return a_href("compare_hitlist", url)		
+
+	def OLD1_compare_hitlist(self):
+
+		#node1 = classification.objects.filter(id = self.node1.id)
+		rv_field = reverse_field[self.node1.level.letter]
+		rv_field = rv_field.replace('__hits','__hit4hmm2hsp__id')
+		hitlist1 = classification.objects.filter(id = self.node1.id).values_list(rv_field,flat = True) 
+
+		rv_field = reverse_field[self.node2.level.letter]
+		rv_field = rv_field.replace('__hits','__hit4hmm2hsp__id')
+		hitlist2 = classification.objects.filter(id = self.node2.id).values_list(rv_field,flat = True) 
+		baseurl = reverse("hitlist_compare",args=[])
+		pstr = urllib.urlencode( {
+			"hitlist1":hitlist1,
+			"hitlist2":hitlist2,
+			} )
+		url = "%s?%s" % (baseurl,pstr)
+		return a_href("compare_hitlist", url)
+		# self
+
+
+
+
+
+	def OLD_compare_hitlist(self):
 		hmmid1 = self.node1.hmmprofile.id if self.node1.level.letter == 'S' else None
 		hmmid2 = self.node2.hmmprofile.id if self.node2.level.letter == 'S' else None
 		baseurl = reverse("hmm_compare",args=[])
