@@ -17,6 +17,7 @@ urlpatterns = [
 
     url(r'^hmm_compare$', views.test__hmm_compare, name='hmm_compare'),
 
+    url(r'^hitlist_compare/$', views.hitlist_compare, name='hitlist_compare'),
 
     url(r'^CCXhit/$', views.test__CCXhit, name='CCXhit_handler'),
 

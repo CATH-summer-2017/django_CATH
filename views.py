@@ -135,7 +135,7 @@ greets = {
 from django.db.models import F
 ###### Prefiltering
 CCXhit = hit4cath2cath.objects.exclude(node1__parent=F("node2__parent") ) 
-
+# cnodes = classification
 def index(request):
 
 	output = 'index is now empty'
@@ -383,18 +383,122 @@ class blankobj():
 			setattr(self,k,v)
 		pass
 
-def hitlist_compare(request,hitlist1,hitlist2):
-	hits1_ids = hitlist1.values_list('target',flat = True)
-	hits2_ids = hitlist2.values_list('target',flat = True)
+def hitlist_compare(request,hitlist1 = None,hitlist2 = None):
+	##### OLD
+	# hits1_ids = hitlist1.values_list('target',flat = True)
+	# hits2_ids = hitlist2.values_list('target',flat = True)
+
+
+	#########################
+	#####New
+	hitlist1 = request.GET.get('hitlist1',None)
+	hitlist2 = request.GET.get('hitlist2',None)
+
+	hits1dict = hit4cath2cath.objects.in_bulk(hitlist1)
+	hits2dict = hit4cath2cath.objects.in_bulk(hitlist2)
+
+	hits1_ids = [x.target.id for x in hits1dict.values()]
+	hits2_ids = [x.target.id for x in hits2dict.values()]
+	##########################
+from .templatetags.util_filter import getattribute_iter
+
+dict_hit2tid = dict(hit4hmm2hsp.objects.values_list('id','target__id'))
+
+def hitlist_compare(request,node1__id = None, node2__id = None):
+
+	node1__id = request.GET.get("node1__id",'17150')
+	node2__id = request.GET.get("node2__id",'4067')
+	# node1 = classification.objects.get()
+	qset1 = classification.objects.filter(id = node1__id)
+	qset2 = classification.objects.filter(id = node2__id)
+
+	node1 = qset1[0]
+	node2 = qset2[0]
+
+
+	#####################
+	# rv_field = reverse_field[node1.level.letter]
+	# text_field = rv_field.replace('__hits','__text')
+	# rv_field = rv_field.replace('__hits','__hit4hmm2hsp__id')
+	# # qset1 = classification.objects.filter(id = self.node1.id)
+	# hitlist1 = qset1.defer(text_field).values_list(rv_field,flat = True) 
+
+	# rv_field = reverse_field[node2.level.letter]
+	# text_field = rv_field.replace('__hits','__text')
+	# rv_field = rv_field.replace('__hits','__hit4hmm2hsp__id')
+	# # qset2 = classification.objects.filter(id = self.node2.id)
+	# hitlist2 = qset2.defer(text_field).values_list(rv_field,flat = True) 
+
+	# hits1dict = hit4hmm2hsp.objects.in_bulk(hitlist1)
+	# hits2dict = hit4hmm2hsp.objects.in_bulk(hitlist2)
+
+	# hits1_ids = {x.target.id: x for x in hits1dict.values()}
+	# hits2_ids = {x.target.id: x for x in hits2dict.values()}
+	# inter_ids = set( hits1_ids ) & set( hits2_ids )
+
+	# qset = [ 
+	# blankobj(id = 1,
+	# 	hit1 = hits1_ids[ i ],
+	# 	hit2 = hits2_ids[ i ]) for i in inter_ids 
+	# ]
+	##########################
+
+	rv_field = reverse_field[node1.level.letter]
+	text_field = rv_field.replace('__hits','__text')
+	rv_field = rv_field.replace('__hits','__hit4hmm2hsp__id')
+	# qset1 = classification.objects.filter(id = self.node1.id)
+	hitlist1 = qset1.defer(text_field).values_list(rv_field,flat = True) 
+
+	rv_field = reverse_field[node2.level.letter]
+	text_field = rv_field.replace('__hits','__text')
+	rv_field = rv_field.replace('__hits','__hit4hmm2hsp__id')
+	# qset2 = classification.objects.filter(id = self.node2.id)
+	hitlist2 = qset2.defer(text_field).values_list(rv_field,flat = True) 
+
+	# hits1dict = hit4hmm2hsp.objects.in_bulk(hitlist1)
+	# hits2dict = hit4hmm2hsp.objects.in_bulk(hitlist2)
+
+	hits1_ids = {dict_hit2tid[ i ]: i for i in hitlist1 if i}
+	hits2_ids = {dict_hit2tid[ i ]: i for i in hitlist2 if i }
+	# hits2_ids = {x.target.id: x for x in hits2dict.values()}
 	inter_ids = set( hits1_ids ) & set( hits2_ids )
-	lst = zip( 
-		hitlist1.filter(target__in = inter_ids).order_by("target"),
-		hitlist2.filter(target__in = inter_ids).order_by("target"),
+
+	hits1_obj = hit4hmm2hsp.objects.in_bulk( [hits1_ids[i] for i in inter_ids] )
+	hits2_obj = hit4hmm2hsp.objects.in_bulk( [hits2_ids[i] for i in inter_ids] )
+
+	qset = [ 
+	blankobj(id = i,
+		hit1 = hit1,
+		hit2 = hit2) for i,hit1,hit2 in 
+		izip(
+			inter_ids,hits1_obj.values(),hits2_obj.values()
 		)
-	qset = [blankobj(id=i,hit1=x,hit2=y) for i,(x,y) in enumerate(lst)]
+	]
+	#####################
+	#########################
+	#####New
+	# hitlist1 = request.GET.get('hitlist1',None)
+	# hitlist2 = request.GET.get('hitlist2',None)
+	# hits1dict = hit4hmm2hsp.objects.in_bulk(hitlist1)
+	# hits2dict = hit4hmm2hsp.objects.in_bulk(hitlist2)
+
+	# hits1_ids = {x.target.id: x for x in hits1dict.values()}
+	# hits2_ids = {x.target.id: x for x in hits2dict.values()}
+	# inter_ids = set( hits1_ids ) & set( hits2_ids )
+
+	# lst = zip( 
+	# 	hitlist1.filter(target__in = inter_ids).order_by("target"),
+	# 	hitlist2.filter(target__in = inter_ids).order_by("target"),
+	# 	)
+
+	# qset = [blankobj(id=i,hit1=x,hit2=y) for i,(x,y) in enumerate(lst)]
+
+
+
 	# for x,y
 
 	cols = [
+	# 'id',
 	'hit1__target__acc',
 	'hit1__target__GETcath_node',
 	'hit1__start',
@@ -438,8 +542,10 @@ def test__CCXhit_homsf(request):
 	# 'node1__id','node2__id',
 	'node2','xhit_urled',
 	'local_CCXhit',
+	'compare_hitlist',
 	'node1__hitCount',
 	'node2__hitCount', 
+
 	  # 'node1__%s__count' % rv_field,
 	  # 'node2__%s__count' % rv_field,
 
