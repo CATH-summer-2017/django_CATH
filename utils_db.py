@@ -364,3 +364,236 @@ def verify_exist_entry(jdict, dbmodel):
     return v
 
 
+
+
+
+
+##############################################################
+## Counting HMM-HMM intermediate sequence ####################
+## In other words, counting D_raw     ########################
+##############################################################
+##############################################################
+
+#### Defining Parallel Wrappers ####
+
+import itertools as itools
+from collections import Counter
+
+
+def batch_worker(seqset,field="cath_node", q = None, c0 = None, c1 = None ):
+    count = Counter()
+    for seq in seqset:
+        c0.count()
+        ids = set( seq.hmmprofile_set.values_list( field,flat = True) )
+    #             pairs = it.combinations(sorted(hmmids),2)
+        pairs = itools.combinations( sorted(ids) ,2)
+        count.update(pairs)
+    q.put(count)
+#     c1.count()
+    return 
+
+def seq_counter(seq):
+    c0.count()
+    hmmids = seq.hmmprofile_set.values_list("id",flat = True)
+#             pairs = it.combinations(sorted(hmmids),2)
+    pairs = itools.combinations( hmmids ,2)
+    count = Counter(pairs)
+    q.put(count)
+    
+    
+def listener( OUTPUT, q = None, c0 = None, c1 = None, fdict = None  ):
+
+    counts = Counter([])    
+    i = 0
+
+    while 1:
+        print i
+        i += 1
+        obj = q.get()
+        if obj:
+            c1.count()
+            counts.update(obj)            
+        else:
+            ################################################################
+            ###### Put counts into a sparse matrix #########################
+            ################################################################     
+#             OUTPUT = OUTPUT.todok()]
+#             counts
+#             d = dict()
+            for (x,y),v in counts.iteritems():
+                OUTPUT.update({
+                    (fdict[x] , fdict[y]) :v
+                })
+#             OUTPUT.update(counts)
+#             q.put( OUTPUT.todok() ) ####### DOK matrix breaks if put on a Queue() for unknown reason
+            q.put( OUTPUT.tocoo() )
+#             q.put(counts)
+            break
+    return
+
+from scipy.sparse import dok_matrix
+import multiprocessing as mp
+from multiprocessing.managers import BaseManager, SyncManager
+
+class ctmat(object):
+    def __init__(self, hmms, sDB = None, seqs = None, letter = None, force = 0):
+        self.force = force 
+        if sDB:
+            seqs = sDB.sequence_set.all().defer('hmmprofile__text')
+            self.sDB = sDB
+        else:
+            self.sDB = seqs[0].seqDB            
+        self.seqs = seqs
+        self.hmms = hmms
+        self.D_raw = None
+        self.D_norm = None
+        if letter:
+            self.set_letter(letter)
+        pass
+    def set_letter(self, letter = 'H'):
+        self.letter = letter
+        self.field = forward_field[letter]
+        self.rfield = reverse_field[letter]
+        self.reverse_dict = sorted(set( self.hmms.values_list( self.field, flat = True)))
+        self.forward_dict = list2dict( self.reverse_dict )
+        self.l = len(self.reverse_dict)
+    
+    def OLD_hit_sum(self,):
+        all_nodes = classification.objects.filter(version__name='v4_1_0')
+        curr_nodes = all_nodes.filter(level__letter = self.letter).defer(self.rfield.replace("__hits","__text"))
+        
+        #   %%time
+        ########################################################
+        ###### Slightly faster    ####################
+        ########################################################
+        qset = curr_nodes.annotate(
+        hcount=Count(Case(
+                When(**{
+                    self.rfield+"__seqDB":self.sDB,
+                    "then":1}),
+        #         output_field=CharField(),
+            ))
+        )
+        hcounts = qset.values_list('id','hcount')
+        # dict()
+        # lst = list(hcounts1)
+        d = dict( list(hcounts) )
+        hcounts = [ d[x] for x in self.reverse_dict]
+        self.hcounts = hcounts
+        
+    def hit_sum(self,):        
+        reset_database_connection()
+        hcounts = []
+        all_nodes = classification.objects.filter(version__name='v4_1_0')
+        curr_nodes = all_nodes.filter(level__letter = self.letter).defer(self.rfield.replace("__hits","__text"))
+        sids = set(self.sDB.sequence_set.values_list('id',flat = True))
+
+        for node_id in self.reverse_dict:
+            qset = curr_nodes.filter(id = node_id)
+            hlist = set( qset.values_list(self.rfield, flat =  True) )
+            hcount = len( hlist & sids)
+            hcounts.append(hcount)
+        self.hcounts = hcounts
+
+        
+        
+    def D_raw_para(self,  bsize = 600, pcount = 5):
+        class MyManager(SyncManager): pass
+        MyManager.register('counter',counter)
+
+        
+        field = self.field
+        self.seqs = self.seqs.prefetch_related('hmmprofile_set__' + self.field.rstrip('__id') ) 
+        
+        ##### Actually firing subprocesses #####
+
+        reset_database_connection()
+        INPUT = self.seqs
+        INPUTs = batch_qs( INPUT, bsize )
+        l = self.l
+        OUTPUT = dok_matrix( (l + 1, l + 1), dtype = 'int')
+
+        local_listener = listener      
+        local_worker = batch_worker
+
+        if __name__=='__main__':
+                global m
+                m = MyManager()
+                m.start()
+          
+                c0 = m.counter( range(INPUT.count()),INF=0, ifprint = 1,  prefix = '[Worker]',
+                              per = bsize,)
+                c1 = m.counter( [],INF=1, ifprint = 1, prefix = '[Listener]',
+                              step = bsize, per = bsize, )
+                fdict = m.dict(self.forward_dict)
+                q = m.Queue();          
+
+                if 1:
+                    pool = mp.Pool( pcount )
+                    watcher  = mp.Process( target = local_listener, args = [OUTPUT], kwargs = {'q':q,'c0':c0,'c1':c1,
+                                                                              'fdict':fdict
+                                                                                              },)
+                    watcher.start()
+                    jobs = []
+
+                    for INPUT_curr in INPUTs:
+#                         job = pool.Process
+                        job  = pool.apply_async(local_worker, (INPUT_curr,), {'q':q, 'field': self.field,'c0':c0,'c1':c1,
+                                                                             })
+                        jobs.append(job)
+                    for job in jobs:
+                        job.get()
+
+                    q.put(None)
+                    watcher.join()
+                    OUTPUT = q.get() 
+                pool.close()
+                pool.join()
+                if not self.force:
+                    test__raw( OUTPUT, reverse_dict = self.reverse_dict, letter = self.letter, seqDB_curr = self.sDB)
+        # D_raw = OUTPUT
+
+        return OUTPUT
+    def normalise(self, D_raw = None):
+        ##### Calculate D_norm from D_raw
+
+        l = self.l
+        OUTPUT = dok_matrix( (l+1,l+1), dtype =  np.float)
+#       ########## it's tricky to check whether "None" has been changed to a numpy array.
+#         else:
+#             raise Exception(' A D_raw must be input! ')
+        INPUT = D_raw
+
+        it  = using_tocoo_izip( INPUT )
+        c=counter(it,per=1000)
+        it  = using_tocoo_izip( INPUT )
+        
+        h1s = []
+        h2s = []
+        h3s = []
+        for x,y,v in it:
+            c.count()    
+            h1s += [self.hcounts[x]]
+            h2s += [self.hcounts[y]]
+            h3s += [v]
+
+        BUFlst = ISS_normalise_new(
+            np.array(h1s),
+            np.array(h2s),
+            np.array(h3s),
+        )
+
+
+        it  = using_tocoo_izip( INPUT )
+        d = dict()
+        for (x,y,_),v in izip( it, BUFlst):
+            k = (x,y)
+            d[k] = v
+
+        OUTPUT.update(d)
+
+        if not self.force:
+            test__norm( OUTPUT, self.reverse_dict, self.letter, seqDB_curr = self.sDB,
+          norm_func = ISS_normalise_new)
+            test__key( OUTPUT )            
+        return OUTPUT

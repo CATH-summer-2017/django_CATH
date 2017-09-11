@@ -25,6 +25,7 @@ listNOT = lambda lst: [not x for x in lst]
 listAND=lambda alst,blst: [ x & y for x,y in izip(alst,blst)]
 listANDNOT=lambda alst,blst: [ x and not y for x,y in izip(alst,blst)]
 list2dict = lambda lst: {v:i for i,v in enumerate(lst) }
+get_vname = lambda var:  [ k for k,v in locals().items() if v is var][0]
 
 
 a_href = lambda text,url: "<a href='%s'>%s</a>" % (url,text)
@@ -35,10 +36,18 @@ def reset_database_connection():
     db.close_old_connections()
 
 import cPickle as pk
-def pk_load(vname,cache_dir = 'data/'):
-    fname = cache_dir + vname
+def pk_load(fname, cache_dir = 'data/'):
+    fname = cache_dir + fname
     return pk.load(open(fname, 'rb'))
+def pk_dump(v, alias, cache_dir = 'data/'):
+    vname,var = v
+    # vname = get_vname( var )
+    cdir = cache_dir + vname + '/'
+    if not os.path.isdir(cdir):
+        os.makedirs(cdir)
 
+    fname = cache_dir + vname + '/' + alias
+    pk.dump( var, open(fname,'wb'))
 levels=[ None,
 'root',
 'Class',
@@ -49,6 +58,27 @@ levels=[ None,
 's60',
 's95',
 's100'];
+
+
+
+
+forward_field = {
+    'S':'cath_node__id',
+    'H':'cath_node__parent__id',
+    'T':'cath_node__parent__parent__id',
+    'A':'cath_node__parent__parent__parent__id',
+    'C':'cath_node__parent__parent__parent__parent__id',
+}
+
+reverse_field = {
+    'S':'hmmprofile__hits',
+    'H':'classification__hmmprofile__hits',
+    'T':'classification__classification__hmmprofile__hits',
+    'A':'classification__classification__classification__hmmprofile__hits',
+    'C':'classification__classification__classification__classification__hmmprofile__hits'
+}
+
+
 
 @contextlib.contextmanager
 def stdoutIO(stdout=None):
