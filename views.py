@@ -46,6 +46,8 @@ field_short = {
 	"node_stat__Rsq_NBcount_Rcount": "R-Squared (residue)",
 	"node_stat__Rsq_NBcount_Acount": "R-Squared (atom)",
 	"domain_stat__maha_dist":"outlier_score",
+	"hcount_geoavg":"average hit count",
+	"ISS_raw":"ISS_raw",
 	# "": ,
 }
 
@@ -128,6 +130,20 @@ greets = {
 		<br/><br/> Note this plot may be filtered using Mahalanobis distance (distance from the origin), producing a central hole. The centre is supposedly occupied by the most canonical sturctures of any single superfamily, thus unlikely to be an outlier. 
 		%s
 		'''%greet_plothowto],
+
+	"scatterplot_hit4cath2cath":[
+	'Normalised scatterplot <br/>You are looking at a collcetion of domain structures',
+
+	'''This is a scatter plot showing the distribution of packedness and relative structure size across all superfamilies in CATH, using PCAed and normalised metrics. Each point represent a domain structure. 
+
+		<br/><br/>Normalisation: The raw distribution are rotated and decorrelated with PCA and then normalised at superfamily level, and superimposed. For small/messy superfamily, the two axes may be swaped for there is no robust observable trend in packing status.
+
+		<br/><br/>x-axis: pcx (relateive structure size): The size of a domain structure relative to its siblings within the same homolgous superfamily. Large domains indicate potential emblishments, or consecutive domains incorrectly merged.
+		<br/><br/>y-axis: pcy (packedness): The packedness of a domain structure relative to its siblings. Postive means more packed structure, whereas negative means less packed, when compared to its siblings.
+		<br/><br/> Note this plot may be filtered using Mahalanobis distance (distance from the origin), producing a central hole. The centre is supposedly occupied by the most canonical sturctures of any single superfamily, thus unlikely to be an outlier. 
+		%s
+		'''%greet_plothowto],
+
 }
 
 
@@ -199,7 +215,7 @@ def view_qset(request, query_set, orders = None, cols = None,title = None,page_c
 ##############   query_set be rendered    #########################################
 ##############5. title: Title of the returned HTML page ###########################
 ###################################################################################
-
+	# request.session["qset"] = query_set
 	# sf_list = CATH_superfamily('v4_1_0')[1]
 	if hasattr(query_set,'model'):
 		if query_set.model == domain:
@@ -274,9 +290,9 @@ def tab__CCXhit__S35(request,qset,**kwargs):
 	cols = ['node1',
 	# 'node1__id','node2__id',
 	'node2','xhit_urled',
-	 # 'node1__hitCount',
 	'compare_hitlist',
-	  # 'node2_hitCount', 
+	 'node1__hit_summary__hcount',
+	  'node2__hit_summary__hcount', 
 	  'node1__hmmprofile__hits__count',
 	  'node2__hmmprofile__hits__count',
 
@@ -543,8 +559,10 @@ def test__CCXhit_homsf(request):
 	'node2','xhit_urled',
 	'local_CCXhit',
 	'compare_hitlist',
-	'node1__hitCount',
-	'node2__hitCount', 
+	'node1__hit_summary_set__all?__0__hcount',
+	'node2__hit_summary_set__all?__0__hcount',
+	'hcount_geoavg',
+	# 'node2__hit_summary__hcount', 
 
 	  # 'node1__%s__count' % rv_field,
 	  # 'node2__%s__count' % rv_field,
@@ -650,38 +668,6 @@ def domain_collection(request, homsf_id = None,
 		title = "s35reps from %s" % (homsf_id) 
 							)
 
-###  !!!!!!!!!!!!!!!!!!!! Deprecated
-def scatterplot_qset(request,homsf_id='1.10.30.10'):
-	# jdict, errmsg = scatterplot_json(homsf_id)
-	# # jdict = scatter_plot(xs,ys)
-	# jdict['success'] = True
-	# jdict['errmsg'] = 'Successful'
-
-	# try:
-	if 1:
-		# jdict = scatterplot_json(homsf_id)
-		jdict = scatterplot_homsf_dict(homsf_id)
-		jdict['success'] = True
-		jdict['errmsg'] = 'Successful'
-	# except Exception as e:
-	# 	exc_type, exc_obj, exc_tb = sys.exc_info()
-	# 	fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-	# 	errmsg = ' '.join([str(x) for x in [exc_type, fname,' line ', exc_tb.tb_lineno,': ', str(e)]]).replace("'",'_')
-	# 	jdict = {'success': False,
-	# 			'errmsg': errmsg};
-
-	# finally:
-	
-	jstr = json.dumps(jdict).replace('\\n','').replace("'",'"');
-	context = {
-	'query_set': [],
-	'title': 'superfamily %s'%homsf_id,
-	'fig_json1': jstr,
-	}
-	# print(jstr) ## just for debugging the JSON issue
-	return render(request,
-			 'tst/nbscatter_template.html',
-			  context)
 
 
 	
@@ -834,6 +820,62 @@ def scatterplot_homsf(request,
 		**kwargs
 		)
 
+def scatterplot_hit4cath2cath(request, 
+	qset = None,
+	# crit = {'s35_count__gt':10,}	
+	):
+	# qset = request.session.get("qset", None)
+	# homsf = select_homsf(homsf_id)
+	# qset = homsf.classification_set
+	# crit = 
+	# qset =  classification.homsf_objects.filter( **crit )
+	# label = 0;
+	fields  = [
+		# 'domain__domain_stat__res_count',
+		'hcount_geoavg',
+		'ISS_raw',
+		'id',
+		# 'superfamily',
+		]
+
+	kwargs = 	{
+	'title': 'hit4cath2cath' ,
+	'greet': greets["scatterplot_hit4cath2cath"],
+	# 'You are looking at a collection of %s'%qset[0].level.name,	
+	'subplot_kwargs':{
+		'logx': True,
+		'logy': True,
+		# 'xlim':[0,500],
+		# 'xlim':[0,500E1],
+		# 'ylim':[0,800E3],
+		'xlabel': field_short[fields[0]],
+		# 'ylabel':'Rsq_NBcount_Acount',
+		'ylabel': field_short[fields[1]],
+		# 'xscale': 'log',
+		# 'yscale': 'log',
+		'regress': False,
+		},
+	'labels': [str(q) for q in qset],
+	}
+
+	return scatterplot_qset(
+		request,
+		qset,
+		fields = fields,
+		# title = 'superfamily %s' % homsf_id,
+		**kwargs
+		)
+def scatterplot_hit4cath2cath__test(request, 
+	# crit = {'s35_count__gt':10,}	
+	):
+
+	letter = 'H'
+	rv_field = reverse_field[letter]
+	qset = CCXhit.filter(node1__level__letter='H') 
+	qset = qset.order_by('-ISS_norm')
+	qset = qset.exclude(ISS_norm__gte=0.7)
+	qset = qset[:1000]
+	return scatterplot_hit4cath2cath(request,qset)
 
 
 def scatterplot_domain_maha(request):

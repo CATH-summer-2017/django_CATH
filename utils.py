@@ -164,7 +164,9 @@ class RectPlugin(mpld3.plugins.PluginBase):
                       }
 
 
-def scatterplot_dict(xs,y2s,ids, colors = None,lbls=None, forced_lbls=None, regress = True, show = False,**kwargs):   
+def scatterplot_dict(xs,y2s,ids, colors = None,lbls=None, forced_lbls=None, regress = True, show = False,
+  logx = False, logy = False,
+  **kwargs):   
     if not lbls:
         lbls = ids
     # if forced_lbls:
@@ -207,6 +209,17 @@ def scatterplot_dict(xs,y2s,ids, colors = None,lbls=None, forced_lbls=None, regr
     
     xs = np.array(xs);
     y2s = np.array(y2s)
+
+    if logx:
+      xs = np.log(xs)
+      xlabel = "log( %s )" % kwargs.get("xlabel","x")
+      kwargs["xlabel"] = xlabel
+
+    if logy:
+      y2s = np.log(y2s)
+      ylabel = "log( %s )" % kwargs.get("ylabel","y")
+      kwargs["ylabel"] = ylabel
+
     # 
     # xs = xs.flat[idx]
     # print(len(idx))
@@ -309,7 +322,8 @@ def scatterplot_homsf_dict(homsf, fields=None, **kwargs):
     jdict = scatterplot_dict(xs,y2s,lbls,**kwargs)
     return(jdict)
 
-def scatterplot_qset_dict(qset, fields=None, labels = None, subplot_kwargs = None,  **kwargs):
+def scatterplot_qset_dict(qset, fields=None, labels = None, subplot_kwargs = None, 
+    **kwargs):
     
     # sf = select_homsf(sfname)
     fields = (fields or 
@@ -327,9 +341,9 @@ def scatterplot_qset_dict(qset, fields=None, labels = None, subplot_kwargs = Non
     vlst = zip(*vlst );
 
     if len(vlst) == 4:
-        xs,y2s,ids,lbls = vlst;
+        xs,ys,ids,lbls = vlst;
     elif len(vlst) == 3:
-        xs,y2s,ids = vlst;
+        xs,ys,ids = vlst;
         # lbls = None
 
     # print(list(labels).__len__())
@@ -342,7 +356,7 @@ def scatterplot_qset_dict(qset, fields=None, labels = None, subplot_kwargs = Non
     # print("debug",len(forced_lbls))
 
 
-    jdict = scatterplot_dict(xs,y2s,ids, lbls = lbls, **subplot_kwargs)
+    jdict = scatterplot_dict(xs,ys,ids, lbls = lbls, **subplot_kwargs)
     return(jdict)
 
 # mpld3.save_json(fig,'tmp')

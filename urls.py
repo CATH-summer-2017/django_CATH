@@ -72,6 +72,12 @@ urlpatterns = [
     url(r'^view3d$', views.view3d, name='hello'),
     url(r'^figure/scplot$', views.scatterplot_homsf, {'homsf_id':'1.10.30.10'},name= 'test'),
     url(r'^figure/scplot_err$', views.scatterplot_homsf, {'homsf_id':'1.10.60.10'},name= 'test'),
+
+
+
+    url(r'^figure/hit4cath2cath$', views.scatterplot_hit4cath2cath__test, name= 'test'),
+    url(r'^figure/tst/test/CCXhit_homsf$', views.scatterplot_hit4cath2cath__test, name= 'test'),
+
     # url(r'^figure/handler/$',views.scatterplot_qset,name='figure_handler'),
     # url(r'^figure/superfamily/(?P<homsf_id>[\d,\.]+)/$', views.scatterplot_homsf,name='fig_nbscatter'),
 
@@ -81,6 +87,7 @@ urlpatterns = [
     url(r'^figure/tst/superfamily/id/(?P<homsf_id>[\d,\.]+)/$', views.scatterplot_domain,name='scatterplot_domain'),
     url(r'^figure/tst/superfamily/$', views.scatterplot_homsf,name='scatterplot_homsf'),
     url(r'^figure/tst/domain/$', views.scatterplot_domain,name='scatterplot_domain_default'),
+
    
     url(r'^figure(?P<url>.*)$',views.redirect,name='figure_reverse'),### WTF do I need this handler???????
 
