@@ -7,6 +7,8 @@ from django.db import models
 from django.db.models import Avg,StdDev,Count
 from django.urls import reverse
 from django.templatetags.static import static
+
+from django.dispatch import receiver
 # from django.contrib.staticfiles.templatetags.staticfiles import static
 # 
 # import requests
@@ -195,6 +197,7 @@ class node_stat(models.Model):
 		primary_key=True)
 	Rsq_NBcount_Acount = models.FloatField(null = True);
 	Rsq_NBcount_Rcount = models.FloatField(null = True);
+
 
 
 
@@ -403,6 +406,14 @@ class hit4cath2cath(models.Model):
 			self.ISS_norm,
 			self.seqDB)
 		return (raw_msg)
+	def __str__(self):
+		# return "Node 1: %s,  Node 2: %s,  "
+		# basefmt = 
+		raw_msg = "[Node1: %s ,Node2: %s]" % (
+			self.node1,
+			self.node2, 
+			)
+		return (raw_msg)
 	def xhit_urled(self, db_source = "Crosshits_v4_1_0",**kwargs):
 		"http://xhits.cathdb.info/crosshits.php?sf2=2.130.10.80&sf1=2.120.10.80&db_source=Crosshits_v4_1_0"
 		baseurl = "http://xhits.cathdb.info/crosshits.php"
@@ -476,4 +487,34 @@ class hit4cath2cath(models.Model):
 
 		return a_href("compare_hitlist", url)
 
+	hcount_geoavg = models.FloatField( default = None, null = True)
+	def update_hcount_geoavg(self):
+		qset1 = self.node1.hit_summary_set.filter(seqDB = self.seqDB)
+		qset2 = self.node2.hit_summary_set.filter(seqDB = self.seqDB)
+		if qset1.exists() and qset2.exists():
+			h1 = qset1.first().hcount
+			h2 = qset2.first().hcount
+			gavg = (h1*h2)**0.5
+		else:
+			gavg = None
+		self.hcount_geoavg = gavg
+		return gavg
+
 		# self.node1.id
+# @receiver(models.signals.post_save, sender=hit4cath2cath)
+# def execute_after_save(sender, instance, created, *args, **kwargs):
+#     if created:
+#     	instance.update_hcount_geoavg()
+#     	instance.save()
+@receiver(models.signals.post_init, sender=hit4cath2cath)
+def execute_after_init(sender, instance, *args, **kwargs):
+	instance.update_hcount_geoavg()
+    	# instance.save()
+# code
+# def ISSstat():
+
+class hit_summary(models.Model):
+	node = models.ForeignKey(classification, on_delete=models.CASCADE);
+	seqDB = models.ForeignKey(seqDB, on_delete=models.CASCADE);
+	hcount = models.IntegerField(default = 0) #### Auto-update in the future
+
