@@ -117,15 +117,15 @@ def get_gzip(url = 'http://download.cathdb.info/cath/releases/daily-release/newe
     return data
 
 import sys
-# import time
+import time
 class counter():
-    def __init__(self, lst, per = 100, fper = 1, INF = False, stdout = sys.stdout,
+    def __init__(self, lst,  per = 100, fper = 1, INF = False, stdout = sys.stdout,
     	ifprint = 1,
         threshold = 0.1,
         step = 1,
-
+        behave = '',
         prefix = '' ):
-        import time
+        # import time
         # self.lst = list(lst);
         # self.imax= len(lst)
         if INF:
@@ -144,6 +144,7 @@ class counter():
         self.t0 = time.time()
         self.threshold = threshold 
         self.step = step
+        self.behave = behave
 
 
     def count(self, step = None, callback = None):
@@ -156,7 +157,7 @@ class counter():
         #     step = self.step
         self.i += (step or self.step)
         
-    def fail(self, msg, ins = None):
+    def fail(self, msg, ins = None, e = None):
      #    if not self.f % self.fper:
         if msg:
             msg = self.prefix + msg
@@ -169,10 +170,14 @@ class counter():
         except:
             pass
     def summary(self, behave = '', INPUT = ''):
+        behave = behave or self.behave
         self.imax = self.i
         self.t1 = time.time()
         self.dur = self.t1 - self.t0
-        self.frate = self.f / float( self.i ) 
+        try:
+            self.frate = self.f / float( self.i )
+        except:
+            self.frate = 0.
         print >> self.stdout, '\n[SUMMARY]:%s' % self.prefix
         print >> self.stdout, '\t[Task]: finshed %s from %s ' % (behave, INPUT)
         print >> self.stdout, '\t[Failrate]%d instances of %d failed, ( %2.2f%% )' % (self.f, self.i, 100 * self.frate )
@@ -638,3 +643,23 @@ hmms2hit_ids_para = lambda hmms,pool: np.expand_dims(
     )
      for hmm in hmms]
 ), axis = 1)
+
+
+def wrap_mat(Da,Db):
+    from scipy.sparse import dok_matrix
+    l  = Da.shape[0]
+    l2 = Db.shape[0]
+    assert l == l2,'shape of two matrix don''t match, Da.shape: %s, Db.shape: %s ' % (l,l2)
+    OUTPUT = dok_matrix( (l,l))
+    it = using_tocoo_izip( Db )
+    D_curr = Da.todok()
+
+    d = dict()
+    c = counter([],INF = 1,per = 10000)
+    for x,y,v2 in it:
+        c.count()
+        v1 = D_curr[x,y]
+        d[(x,y)] = [v1,v2]
+    OUTPUT.update(d)
+    c.summary("zipping sparse matrix")
+    return OUTPUT
