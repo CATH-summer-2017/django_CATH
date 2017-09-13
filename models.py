@@ -444,7 +444,7 @@ class hit4cath2cath(models.Model):
 			"node2__id":self.node2.id,
 			} )
 		# url = reverse('CCXhit_handler',args=[])
-		baseurl = reverse("hitlist_compare",args=[])
+		baseurl = reverse("tab__hitlist__pair",args=[])
 		url = "%s?%s" % (baseurl,pstr)
 
 		return a_href("compare_hitlist", url)		
@@ -459,7 +459,7 @@ class hit4cath2cath(models.Model):
 		rv_field = reverse_field[self.node2.level.letter]
 		rv_field = rv_field.replace('__hits','__hit4hmm2hsp__id')
 		hitlist2 = classification.objects.filter(id = self.node2.id).values_list(rv_field,flat = True) 
-		baseurl = reverse("hitlist_compare",args=[])
+		baseurl = reverse("tab__hitlist__pair",args=[])
 		pstr = urllib.urlencode( {
 			"hitlist1":hitlist1,
 			"hitlist2":hitlist2,
@@ -506,9 +506,15 @@ class hit4cath2cath(models.Model):
 #     if created:
 #     	instance.update_hcount_geoavg()
 #     	instance.save()
-@receiver(models.signals.post_init, sender=hit4cath2cath)
-def execute_after_init(sender, instance, *args, **kwargs):
-	instance.update_hcount_geoavg()
+
+
+
+# @receiver(models.signals.post_init, sender=hit4cath2cath)
+# def execute_after_init(sender, instance, *args, **kwargs):
+# 	instance.update_hcount_geoavg()
+
+
+
     	# instance.save()
 # code
 # def ISSstat():

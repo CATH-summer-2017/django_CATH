@@ -378,7 +378,7 @@ def test__CCXhit(request):
 	# 		)
 	return tab__CCXhit__S35(request,qset, **kwargs)
 
-def test__hmm_compare(request,hmm1__id = None,hmm2__id = None):
+def test__hmm_compare(request,hmm1__id = None,hmm2__id = None, sDB = None):
 	# params = request.GET or {"hmm1__id":17150,"hmm2__id":4067}
 	hmm1__id = request.GET.get("hmm1__id",'17150')
 	hmm2__id = request.GET.get("hmm2__id",'4067')
@@ -399,7 +399,8 @@ class blankobj():
 			setattr(self,k,v)
 		pass
 
-def hitlist_compare(request,hitlist1 = None,hitlist2 = None):
+############# DEPRECATED!!!!!!!!#######################
+def hitlist_compare(request, hitlist1 = None, hitlist2 = None):
 	##### OLD
 	# hits1_ids = hitlist1.values_list('target',flat = True)
 	# hits2_ids = hitlist2.values_list('target',flat = True)
@@ -420,11 +421,56 @@ from .templatetags.util_filter import getattribute_iter
 
 dict_hit2tid = dict(hit4hmm2hsp.objects.values_list('id','target__id'))
 
-def hitlist_compare(request,node1__id = None, node2__id = None):
+# class 
 
+def tab__hitlist__pair(request, ):
 	node1__id = request.GET.get("node1__id",'17150')
 	node2__id = request.GET.get("node2__id",'4067')
-	# node1 = classification.objects.get()
+	sDB_dict  = dict(
+					zip(
+						["name","version"], request.GET.get("seqDB",'CATH__v4_1_0').split("__") 
+						) 
+					)
+	try:
+		sDB = seqDB.objects.get(**sDB_dict)
+	except Exception as e:
+		msg = "you specifed seqDB with:%s <br/> But exception is raised: '%s' <br/> try append '/?seqDB=CATH__v4_1_0' to your url" % (sDB_dict, e)
+		return HttpResponse(msg)
+
+	qset = hitlist_compare(
+		node1__id,
+		node2__id, 
+		sDB )
+
+
+
+
+	cols = [
+	# 'id',
+	'hit1__target__acc',
+	'hit1__target__GETcath_node',
+	'hit1__start',
+	'hit1__end',
+	'hit2__end',
+	'hit2__start',
+	'hit1__bitscore',
+	'hit2__bitscore',
+	]
+
+	title = 'ISS_hitlists'
+
+	response = view_qset(
+		request,
+		qset, 
+		cols = cols,
+		title = title,
+		)
+	return response
+
+
+# def hitlist_compare(request, node1__id = None, node2__id = None, sDB = None, **kwargs):
+def hitlist_compare(node1__id = None, node2__id = None, sDB = None, **kwargs):
+
 	qset1 = classification.objects.filter(id = node1__id)
 	qset2 = classification.objects.filter(id = node2__id)
 
@@ -432,50 +478,32 @@ def hitlist_compare(request,node1__id = None, node2__id = None):
 	node2 = qset2[0]
 
 
-	#####################
-	# rv_field = reverse_field[node1.level.letter]
-	# text_field = rv_field.replace('__hits','__text')
-	# rv_field = rv_field.replace('__hits','__hit4hmm2hsp__id')
-	# # qset1 = classification.objects.filter(id = self.node1.id)
-	# hitlist1 = qset1.defer(text_field).values_list(rv_field,flat = True) 
-
-	# rv_field = reverse_field[node2.level.letter]
-	# text_field = rv_field.replace('__hits','__text')
-	# rv_field = rv_field.replace('__hits','__hit4hmm2hsp__id')
-	# # qset2 = classification.objects.filter(id = self.node2.id)
-	# hitlist2 = qset2.defer(text_field).values_list(rv_field,flat = True) 
-
-	# hits1dict = hit4hmm2hsp.objects.in_bulk(hitlist1)
-	# hits2dict = hit4hmm2hsp.objects.in_bulk(hitlist2)
-
-	# hits1_ids = {x.target.id: x for x in hits1dict.values()}
-	# hits2_ids = {x.target.id: x for x in hits2dict.values()}
-	# inter_ids = set( hits1_ids ) & set( hits2_ids )
-
-	# qset = [ 
-	# blankobj(id = 1,
-	# 	hit1 = hits1_ids[ i ],
-	# 	hit2 = hits2_ids[ i ]) for i in inter_ids 
-	# ]
-	##########################
-
-	rv_field = reverse_field[node1.level.letter]
+	rv_field = reverse_field[ node1.level.letter ]
+	sDB_field  = rv_field + "__seqDB"
 	text_field = rv_field.replace('__hits','__text')
-	rv_field = rv_field.replace('__hits','__hit4hmm2hsp__id')
+	rvid_field = rv_field.replace('__hits','__hit4hmm2hsp__id')
 	# qset1 = classification.objects.filter(id = self.node1.id)
-	hitlist1 = qset1.defer(text_field).values_list(rv_field,flat = True) 
+
 
 	rv_field = reverse_field[node2.level.letter]
+	sDB_field  = rv_field + "__seqDB"
 	text_field = rv_field.replace('__hits','__text')
-	rv_field = rv_field.replace('__hits','__hit4hmm2hsp__id')
+	rvid_field = rv_field.replace('__hits','__hit4hmm2hsp__id')
+
 	# qset2 = classification.objects.filter(id = self.node2.id)
-	hitlist2 = qset2.defer(text_field).values_list(rv_field,flat = True) 
 
-	# hits1dict = hit4hmm2hsp.objects.in_bulk(hitlist1)
-	# hits2dict = hit4hmm2hsp.objects.in_bulk(hitlist2)
+	# hitlist1 = qset1.defer(text_field).values_list(rvid_field, flat = True) 
+	# hitlist2 = qset2.defer(text_field).values_list(rvid_field, flat = True) 
 
-	hits1_ids = {dict_hit2tid[ i ]: i for i in hitlist1 if i}
-	hits2_ids = {dict_hit2tid[ i ]: i for i in hitlist2 if i }
+	# hits1_ids = {dict_hit2tid[ i ]: i for i in hitlist1 if i }
+	# hits2_ids = {dict_hit2tid[ i ]: i for i in hitlist2 if i }
+
+	hitlist1 = qset1.defer(text_field).values_list(rvid_field, sDB_field) 
+	hitlist2 = qset2.defer(text_field).values_list(rvid_field, sDB_field) 
+	sDB_id = sDB.id
+	hits1_ids = {dict_hit2tid[ i ]: i for i,j in hitlist1 if i and j==sDB_id}
+	hits2_ids = {dict_hit2tid[ i ]: i for i,j in hitlist2 if i and j==sDB_id}
+
 	# hits2_ids = {x.target.id: x for x in hits2dict.values()}
 	inter_ids = set( hits1_ids ) & set( hits2_ids )
 
@@ -490,6 +518,8 @@ def hitlist_compare(request,node1__id = None, node2__id = None):
 			inter_ids,hits1_obj.values(),hits2_obj.values()
 		)
 	]
+	return qset
+
 	#####################
 	#########################
 	#####New
@@ -509,32 +539,29 @@ def hitlist_compare(request,node1__id = None, node2__id = None):
 
 	# qset = [blankobj(id=i,hit1=x,hit2=y) for i,(x,y) in enumerate(lst)]
 
-
-
 	# for x,y
 
-	cols = [
-	# 'id',
-	'hit1__target__acc',
-	'hit1__target__GETcath_node',
-	'hit1__start',
-	'hit1__end',
-	'hit2__end',
-	'hit2__start',
-	'hit1__bitscore',
-	'hit2__bitscore',
+	# cols = [
+	# # 'id',
+	# 'hit1__target__acc',
+	# 'hit1__target__GETcath_node',
+	# 'hit1__start',
+	# 'hit1__end',
+	# 'hit2__end',
+	# 'hit2__start',
+	# 'hit1__bitscore',
+	# 'hit2__bitscore',
+	# ]
 
-	]
+	# title = 'ISS_hitlists'
 
-	title = 'ISS_hitlists'
-
-	response = view_qset(
-		request,
-		qset, 
-		cols = cols,
-		title = title,
-		)
-	return response
+	# response = view_qset(
+	# 	request,
+	# 	qset, 
+	# 	cols = cols,
+	# 	title = title,
+	# 	)
+	# return response
 
 
 def test__CCXhit_homsf(request):
