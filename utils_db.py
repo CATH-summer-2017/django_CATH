@@ -437,12 +437,11 @@ def listener( OUTPUT, q = None, c0 = None, c1 = None, fdict = None  ):
             break
     return
 
+
+
 from scipy.sparse import dok_matrix
 import multiprocessing as mp
 from multiprocessing.managers import BaseManager, SyncManager
-
-# from tst.utils_db import *
-
 def draft_hsummary(node, sDB, hcount, node_id = None):
     if node_id:
         node = classifictaion.objects.get(pk = node_id)
@@ -469,12 +468,14 @@ class ctmat(object):
             seqs = sDB.sequence_set.all().defer('hmmprofile__text')
             self.sDB = sDB
         else:
-            self.sDB = seqs[0].seqDB            
+            self.sDB = seqs[0].seqDB
+        self.sDB_id = self.sDB.id
         self.seqs = seqs
         self.hmms = hmms
         self.D_raw = None
         self.D_norm = None
         self.D_both = None
+        self.D_geoavg = None
         self.hits = None
         
         if letter:
@@ -482,6 +483,36 @@ class ctmat(object):
         self.alias = alias or 'test'
         self.name = '%s_%s' % (self.alias, self.letter)
         pass
+    def dump(self, name = None, attr = None, **kwargs):
+        name = name or self.name
+        if not attr:
+            attr = ["D_raw","D_norm","D_both","D_geoavg",]
+        if not isinstance(attr,list):
+            attr = [attr]
+        for a in attr:
+            
+            try:
+                pk_dump( (a, getattr(self,a) ), name )
+                print "[Msg] managed to dump ""%s"" to %s." % (a, fname)
+            except Exception as e:
+                print "[Msg] failed  to dump ""%s"" to %s  Exception: '%s' " % (a, fname, e)
+
+    def load(self, name, attr = None, **kwargs):
+        if not attr:
+            attr = ["D_raw","D_norm","D_both","D_geoavg",]
+        if not isinstance(attr,list):
+            attr = [attr]
+        for a in attr:
+#         for f in fields:
+            fname = '%s/%s' % (a, name, )
+            try:
+                setattr(self, a, 
+                pk_load( fname, **kwargs),
+                )
+                print "[Msg] managed to load ""%s"" from %s" % (a, fname)
+            except Exception as e:
+                print "[Msg] failed  to load ""%s"" from %s  Exception: '%s' " % (a, fname, e)
+            
     def set_letter(self, letter = 'H'):
         self.letter = letter
         self.field = forward_field[letter]
@@ -515,13 +546,15 @@ class ctmat(object):
         hcounts = [ d[x] for x in self.reverse_dict]
         self.hcounts = hcounts
     
-    def hit_sum(self,):
+    def hit_sum(self, dump = 0):
         if isinstance(self.hits, type(None)):
             self.hits = self.seqs.filter(**{"hit4hmm2hsp__query__%s__in" % self.field : self.reverse_dict })
         qset = self.hits.values_list("hit4hmm2hsp__query__%s" % self.field, ).annotate(hcount = Count("id",distinct = True))
         hcounts0 = dict( qset.values_list("hit4hmm2hsp__query__%s" % self.field,"hcount"))
         ex = set(self.reverse_dict) and set(hcounts0.keys())
         self.hcounts = [ hcounts0[i] if i in ex else 0 for i in self.reverse_dict ]
+        if dump:
+            self.dump( name = self.name, attr = 'hcounts')
         return (hcounts0)
 
     def OLD_hit_sum(self,):        
@@ -540,7 +573,7 @@ class ctmat(object):
 
         
         
-    def Draw_para(self,  bsize = 600, pcount = 5):
+    def Draw_para(self,  bsize = 600, pcount = 5, dump = 0 ):
         class MyManager(SyncManager): pass
         MyManager.register('counter',counter)
 
@@ -595,10 +628,13 @@ class ctmat(object):
                 if not self.force:
                     test__raw( OUTPUT, reverse_dict = self.reverse_dict, letter = self.letter, seqDB_curr = self.sDB)
         # D_raw = OUTPUT
-        self.D_raw = OUTPUT
+        self.D_raw = OUTPUT        
+        if dump:
+            self.dump( name = self.name, attr = 'D_raw')
+
 
         return OUTPUT
-    def Dnorm(self, D_raw = None):
+    def Dnorm(self, D_raw = None, dump = 0):
         ##### Calculate D_norm from D_raw
 
         l = self.l
@@ -624,7 +660,7 @@ class ctmat(object):
             h2s += [self.hcounts[y]]
             h3s += [v]
 
-        BUFlst = ISS_Dnorm_new(
+        BUFlst = ISS_normalise_new(
             np.array(h1s),
             np.array(h2s),
             np.array(h3s),
@@ -641,11 +677,15 @@ class ctmat(object):
 
         if not self.force:
             test__norm( OUTPUT, self.reverse_dict, self.letter, seqDB_curr = self.sDB,
-          norm_func = ISS_Dnorm_new)
+          norm_func = ISS_normalise_new)
             test__key( OUTPUT )
         self.D_norm = OUTPUT
+
+        if dump:
+            self.dump( name = self.name, attr = 'D_norm')       
         return OUTPUT
-    def Dgeoavg(self, D_raw = None):
+    
+    def Dgeoavg(self, D_raw = None, dump = 0):
         ##### Calculate D_norm from D_raw
 
         l = self.l
@@ -686,18 +726,9 @@ class ctmat(object):
 #           norm_func = ISS_Dnorm_new)
 #             test__key( OUTPUT )
         self.D_geoavg = OUTPUT
+        if dump:
+            self.dump( name = self.name, attr = 'D_geoavg')
         return OUTPUT
-    def load(self, name, fields = None, **kwargs):
-        fields = fields or ['D_raw','D_norm','hcounts', 'D_both'] ;
-        for f in fields:
-            fname = '%s/%s' % (f, name, )
-            try:
-                setattr(self, f, 
-                pk_load( fname, **kwargs),
-                )
-                print "[Msg] managed to load ""%s"" from %s" % (f, fname)
-            except:
-                print "[Msg] failed  to load ""%s"" from %s" % (f, fname)
     def MySQL_hcount(self):
         def callback(buf):
             hit_summary.objects.bulk_create(buf)
@@ -724,18 +755,18 @@ class ctmat(object):
             callback(buf)
         c.summary()
         pass
-    def Dboth(self):
-        if isinstance(self.D_both, type(None) ):
-            self.D_both = wrap_mat(
+    def Dboth(self, dump = 0):
+        self.D_both = wrap_mat(
                 wrap_mat(self.D_raw,self.D_norm), self.D_geoavg
             )
-            pk_dump( ('D_both', self.D_both), self.name )
+        if dump:
+            self.dump( name = self.name, attr = 'D_both')
         return self.D_both
         pass
-    def to_MySQL(self):
+    def to_MySQL(self, bsize = 1E4, ignoreFunc = lambda x: x < 0.0, dry_run = False, cstop = 0):
         reset_database_connection()
         behave = "inserting ISS hits between S35 "
-        cutoff = 0.0
+#         cutoff = 0.0
 
         ###################################################
         ##### Inserting S35-S35 ISS-hit ###################
@@ -756,23 +787,33 @@ class ctmat(object):
         # cutoff = 0.5
 
 
-        c = counter([],INF=1, per = 1E4, prefix = behave)
+        c = counter([],INF=1, per = bsize, prefix = behave)
 
 
-        def callback( buf ):
-            hit4cath2cath.objects.bulk_create(buf)
+        def callback( buf, dry_run = dry_run):
+            if not dry_run:               
+                hit4cath2cath.objects.bulk_create(buf)
 
         with transaction.atomic():
             buf = []
 
-            for (x,y),((v1,v2),v3) in it0:
-                if v2 < cutoff :
+            for (x,y),vs in it0:
+                c.count()
+                
+                v1,v2 = vs
+                if len(v1) == 2:
+                    v3 = v2
+                    (v1,v2) = v1
+                else:
+                    v3 = 0
+
+                if ignoreFunc(v2):
+#                 if v2 < cutoff :
                     continue
                 node1 = dct_nodes[x]
                 node2 = dct_nodes[y]
                 nodes = sorted([node1,node2])
         #         hmm1 = (nodes[0])
-        #         h
         #         assert nodes[0]
                 jdict = {
                     'node1_id': nodes[0],
@@ -780,18 +821,21 @@ class ctmat(object):
                     'ISS_raw': v1,
                     'ISS_norm':v2,
                     'hcount_geoavg':v3,
-                    'seqDB': self.sDB,
+                    'seqDB_id': self.sDB_id,
+#                     'seqDB': self.sDB,
+                    
                 }
 
                 obj = hit4cath2cath(**jdict)
                 buf.append(obj)
-                c.count()
 
-                if not c.i % 1000:
-        #             hit4cath2cath.objects.bulk_create(buf)
+                if not c.i % bsize :
+#                     hit4cath2cath.objects.bulk_create(buf)
                     callback(buf)
                     buf = []
-
-            hit4cath2cath.objects.bulk_create(buf)
+                if c.i == cstop:
+                    break
+#             hit4cath2cath.objects.bulk_create(buf)
+            callback(buf)
             buf = []
         c.summary()
