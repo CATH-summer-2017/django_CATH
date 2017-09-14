@@ -30,6 +30,15 @@ levels=[ None,
 's95',
 's100'];
 
+class blankobj(object):
+	def __init__(self,**kwargs):
+		for k,v in kwargs.iteritems():
+			setattr(self,k,v)
+		pass
+
+
+
+
 class homsf_manager(models.Manager):
 	def get_queryset(self):
 		homsf_qset = super(homsf_manager, self).get_queryset().filter(level_id=5);
@@ -524,3 +533,97 @@ class hit_summary(models.Model):
 	seqDB = models.ForeignKey(seqDB, on_delete=models.CASCADE);
 	hcount = models.IntegerField(default = 0) #### Auto-update in the future
 
+
+
+
+class hitP_obj(blankobj):
+	def __init__(self,**kwargs):
+		return blankobj.__init__(self, **kwargs)
+		# return super(hitP_obj, self).__init__(**kwargs)
+	def __str__(self):
+		return '%s: %2.1f  %2.1f' % (self.acc, self.hit1.bitscore, self.hit2.bitscore)
+
+
+def hitlist_compare(node1__id = 309754, node2__id = 310524, sDB = None, **kwargs):
+    sDB_id = sDB.id
+
+    qset1 = classification.objects.filter(id = node1__id)
+    qset2 = classification.objects.filter(id = node2__id)
+
+    node1 = qset1[0]
+    node2 = qset2[0]
+
+
+    rv_field = reverse_field[ node1.level.letter ]
+    sDB_field  = rv_field + "__seqDB"
+    text_field = rv_field.replace('__hits','__text')
+    rvid_field = rv_field.replace('__hits','__hit4hmm2hsp__id')
+
+    fs = [rv_field, rvid_field, sDB_field]
+    hitlist1 = qset1.values_list(*fs).distinct() 
+
+    
+    rv_field = reverse_field[ node2.level.letter ]
+    sDB_field  = rv_field + "__seqDB"
+    text_field = rv_field.replace('__hits','__text')
+    rvid_field = rv_field.replace('__hits','__hit4hmm2hsp__id')
+    
+    fs = [rv_field, rvid_field, sDB_field]
+    hitlist2 = qset2.values_list(*fs).distinct() 
+
+
+
+    
+    hits1_ids = {seqid:hitid for seqid,hitid,sid in hitlist1 if sid == sDB_id}
+    hits2_ids = {seqid:hitid for seqid,hitid,sid in hitlist2 if sid == sDB_id}
+    inter_ids = set(hits1_ids) & set(hits2_ids)
+
+    hits1_obj = hit4hmm2hsp.objects.in_bulk( [hits1_ids[i] for i in inter_ids] )
+    hits2_obj = hit4hmm2hsp.objects.in_bulk( [hits2_ids[i] for i in inter_ids] )
+
+    # print len(inter_ids)
+    qset = [ 
+    hitP_obj(
+        id = i,
+        acc = hit1.target.acc,
+        hit1 = hit1,
+        hit2 = hit2) for i,hit1,hit2 in 
+        izip(
+            inter_ids,hits1_obj.values(),hits2_obj.values()
+        )
+
+    ]
+
+
+    return qset
+
+
+
+# class Publisher(models.Model):
+#     name = models.CharField(max_length=30)
+#     address = models.CharField(max_length=50)
+#     city = models.CharField(max_length=60)
+#     state_province = models.CharField(max_length=30)
+#     country = models.CharField(max_length=50)
+#     website = models.URLField()
+
+#     class Meta:
+#         ordering = ["-name"]
+
+#     def __str__(self):              # __unicode__ on Python 2
+#         return self.name
+
+# class Author(models.Model):
+#     salutation = models.CharField(max_length=10)
+#     name = models.CharField(max_length=200)
+#     email = models.EmailField()
+#     headshot = models.ImageField(upload_to='author_headshots')
+
+#     def __str__(self):              # __unicode__ on Python 2
+#         return self.name
+
+# class Book(models.Model):
+#     title = models.CharField(max_length=100)
+#     authors = models.ManyToManyField('Author')
+#     publisher = models.ForeignKey(Publisher, on_delete=models.CASCADE)
+#     publication_date = models.DateField()

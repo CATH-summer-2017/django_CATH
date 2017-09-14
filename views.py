@@ -8,7 +8,7 @@ from django.shortcuts import render
 
 from django.http import *
 from django.template import loader
-
+from django.views import View
 
 from django.db.models import Avg,Count,Q
 from .models import *
@@ -23,15 +23,35 @@ import json
 from .utils import *
 import sys,os
 
-# import os
+
 
 import cPickle as pk
+
+
+
+from django.views.generic import ListView
+
+
+# class PublisherList(ListView):
+#	 model = Publisher
+
+
+
+
+
+# import os
+class TemplateView(View):
+	# self.template = None
+	def get(self, request):
+		# <view logic>
+		return HttpResponse('result')
+
 # if 'D_raw' not in locals().keys():
-#     fname = 'data/ISS_raw'
-#     D_raw = pk.load(open(fname, 'rb')).todok()
+#	 fname = 'data/ISS_raw'
+#	 D_raw = pk.load(open(fname, 'rb')).todok()
 # if 'D_norm' not in locals().keys():
-#     fname = 'data/ISS_norm'
-#     D_norm = pk.load(open(fname, 'rb')).todok()
+#	 fname = 'data/ISS_norm'
+#	 D_norm = pk.load(open(fname, 'rb')).todok()
 
 #### Displayed shorthands for any field
 field_short = {
@@ -48,6 +68,7 @@ field_short = {
 	"domain_stat__maha_dist":"outlier_score",
 	"hcount_geoavg":"average hit count",
 	"ISS_raw":"ISS_raw",
+	# "hit1__bitscore":"hit1__bitscore"
 	# "": ,
 }
 
@@ -212,7 +233,7 @@ def view_qset(request, query_set, orders = None, cols = None,title = None,page_c
 ##############2. query_set: The Django QuerySet instance to be tabulated ##########
 ##############3. orders (optional) :  How should the query_set be ordered #########
 ##############4. cols (necessary)  :  A list of attributes of an element from #####
-##############   query_set be rendered    #########################################
+##############   query_set be rendered	#########################################
 ##############5. title: Title of the returned HTML page ###########################
 ###################################################################################
 	# request.session["qset"] = query_set
@@ -271,19 +292,19 @@ def view_qset(request, query_set, orders = None, cols = None,title = None,page_c
 				 'tst/view_table.html',
 				  context)
 forward_field = {
-    'S':'cath_node__id',
-    'H':'cath_node__parent__id',
-    'T':'cath_node__parent__parent__id',
-    'A':'cath_node__parent__parent__parent__id',
-    'C':'cath_node__parent__parent__parent__parent__id',
+	'S':'cath_node__id',
+	'H':'cath_node__parent__id',
+	'T':'cath_node__parent__parent__id',
+	'A':'cath_node__parent__parent__parent__id',
+	'C':'cath_node__parent__parent__parent__parent__id',
 }
 
 reverse_field = {
-    'S':'hmmprofile__hits',
-    'H':'classification__hmmprofile__hits',
-    'T':'classification__classification__hmmprofile__hits',
-    'A':'classification__classification__classification__hmmprofile__hits',
-    'C':'classification__classification__classification__classification__hmmprofile__hits'
+	'S':'hmmprofile__hits',
+	'H':'classification__hmmprofile__hits',
+	'T':'classification__classification__hmmprofile__hits',
+	'A':'classification__classification__classification__hmmprofile__hits',
+	'C':'classification__classification__classification__classification__hmmprofile__hits'
 }
 
 def tab__CCXhit__S35(request,qset,**kwargs):
@@ -393,39 +414,30 @@ def test__hmm_compare(request,hmm1__id = None,hmm2__id = None, sDB = None):
 	return hitlist_compare(request, hitlist1,hitlist2)
 	# pass
 
-class blankobj():
-	def __init__(self,**kwargs):
-		for k,v in kwargs.iteritems():
-			setattr(self,k,v)
-		pass
-
-############# DEPRECATED!!!!!!!!#######################
-def hitlist_compare(request, hitlist1 = None, hitlist2 = None):
-	##### OLD
-	# hits1_ids = hitlist1.values_list('target',flat = True)
-	# hits2_ids = hitlist2.values_list('target',flat = True)
 
 
-	#########################
-	#####New
-	hitlist1 = request.GET.get('hitlist1',None)
-	hitlist2 = request.GET.get('hitlist2',None)
+class fake__query_set(list):
+	def __init__(self, data):
+		self.data  =  data
 
-	hits1dict = hit4cath2cath.objects.in_bulk(hitlist1)
-	hits2dict = hit4cath2cath.objects.in_bulk(hitlist2)
+	def __iter__(self):
+		return (x for x in self.data)
+	def __len__(self):
+		return len(self.data)
 
-	hits1_ids = [x.target.id for x in hits1dict.values()]
-	hits2_ids = [x.target.id for x in hits2dict.values()]
-	##########################
-from .templatetags.util_filter import getattribute_iter
+   	def values_list(self, *args ):
+		# its = []
+		its = [ [getattribute_iter( q, attr) for q in self.data] for attr in args]
+		return izip(*its)
 
-dict_hit2tid = dict(hit4hmm2hsp.objects.values_list('id','target__id'))
+	def filter(self):
+		raise Exception("Yet to be implemented ")
 
 # class 
 
-def tab__hitlist__pair(request, ):
-	node1__id = request.GET.get("node1__id",'17150')
-	node2__id = request.GET.get("node2__id",'4067')
+def hitlistPR__param2qset(request):
+	node1__id = request.GET.get("node1__id",'309754')
+	node2__id = request.GET.get("node2__id",'310524')
 	sDB_dict  = dict(
 					zip(
 						["name","version"], request.GET.get("seqDB",'CATH__v4_1_0').split("__") 
@@ -442,7 +454,11 @@ def tab__hitlist__pair(request, ):
 		node2__id, 
 		sDB )
 
+	return qset
+def tab__hitlist__pair(request, ):
+	# (node1__id,node2__id,sDB_dict) = parse__hitlistPR__param(request)
 
+	qset = hitlistPR__param2qset(request)
 
 
 	cols = [
@@ -468,101 +484,10 @@ def tab__hitlist__pair(request, ):
 	return response
 
 
+
+# dict_hit2tid = dict(hit4hmm2hsp.objects.values_list('id','target__id'))
+
 # def hitlist_compare(request, node1__id = None, node2__id = None, sDB = None, **kwargs):
-def hitlist_compare(node1__id = None, node2__id = None, sDB = None, **kwargs):
-
-	qset1 = classification.objects.filter(id = node1__id)
-	qset2 = classification.objects.filter(id = node2__id)
-
-	node1 = qset1[0]
-	node2 = qset2[0]
-
-
-	rv_field = reverse_field[ node1.level.letter ]
-	sDB_field  = rv_field + "__seqDB"
-	text_field = rv_field.replace('__hits','__text')
-	rvid_field = rv_field.replace('__hits','__hit4hmm2hsp__id')
-	# qset1 = classification.objects.filter(id = self.node1.id)
-
-
-	rv_field = reverse_field[node2.level.letter]
-	sDB_field  = rv_field + "__seqDB"
-	text_field = rv_field.replace('__hits','__text')
-	rvid_field = rv_field.replace('__hits','__hit4hmm2hsp__id')
-
-	# qset2 = classification.objects.filter(id = self.node2.id)
-
-	# hitlist1 = qset1.defer(text_field).values_list(rvid_field, flat = True) 
-	# hitlist2 = qset2.defer(text_field).values_list(rvid_field, flat = True) 
-
-	# hits1_ids = {dict_hit2tid[ i ]: i for i in hitlist1 if i }
-	# hits2_ids = {dict_hit2tid[ i ]: i for i in hitlist2 if i }
-
-	hitlist1 = qset1.defer(text_field).values_list(rvid_field, sDB_field) 
-	hitlist2 = qset2.defer(text_field).values_list(rvid_field, sDB_field) 
-	sDB_id = sDB.id
-	hits1_ids = {dict_hit2tid[ i ]: i for i,j in hitlist1 if i and j==sDB_id}
-	hits2_ids = {dict_hit2tid[ i ]: i for i,j in hitlist2 if i and j==sDB_id}
-
-	# hits2_ids = {x.target.id: x for x in hits2dict.values()}
-	inter_ids = set( hits1_ids ) & set( hits2_ids )
-
-	hits1_obj = hit4hmm2hsp.objects.in_bulk( [hits1_ids[i] for i in inter_ids] )
-	hits2_obj = hit4hmm2hsp.objects.in_bulk( [hits2_ids[i] for i in inter_ids] )
-
-	qset = [ 
-	blankobj(id = i,
-		hit1 = hit1,
-		hit2 = hit2) for i,hit1,hit2 in 
-		izip(
-			inter_ids,hits1_obj.values(),hits2_obj.values()
-		)
-	]
-	return qset
-
-	#####################
-	#########################
-	#####New
-	# hitlist1 = request.GET.get('hitlist1',None)
-	# hitlist2 = request.GET.get('hitlist2',None)
-	# hits1dict = hit4hmm2hsp.objects.in_bulk(hitlist1)
-	# hits2dict = hit4hmm2hsp.objects.in_bulk(hitlist2)
-
-	# hits1_ids = {x.target.id: x for x in hits1dict.values()}
-	# hits2_ids = {x.target.id: x for x in hits2dict.values()}
-	# inter_ids = set( hits1_ids ) & set( hits2_ids )
-
-	# lst = zip( 
-	# 	hitlist1.filter(target__in = inter_ids).order_by("target"),
-	# 	hitlist2.filter(target__in = inter_ids).order_by("target"),
-	# 	)
-
-	# qset = [blankobj(id=i,hit1=x,hit2=y) for i,(x,y) in enumerate(lst)]
-
-	# for x,y
-
-	# cols = [
-	# # 'id',
-	# 'hit1__target__acc',
-	# 'hit1__target__GETcath_node',
-	# 'hit1__start',
-	# 'hit1__end',
-	# 'hit2__end',
-	# 'hit2__start',
-	# 'hit1__bitscore',
-	# 'hit2__bitscore',
-	# ]
-
-	# title = 'ISS_hitlists'
-
-	# response = view_qset(
-	# 	request,
-	# 	qset, 
-	# 	cols = cols,
-	# 	title = title,
-	# 	)
-	# return response
-
 
 def test__CCXhit_homsf(request):
 	# hit4cath2cath.objects.values_list('node1__id'.'node2__id')
@@ -697,9 +622,18 @@ def domain_collection(request, homsf_id = None,
 
 
 
-	
 
-def scatterplot_qset( request, qset = None, title = None, fields = None, greet = None, filter = [], **kwargs):
+############## Use class-based view to replace "scatterplot_qset" in the future #############################
+# class scatterplot__view(TemplateView):
+# 	template_name = ""
+# 	def get_context_data(self):
+# 		pass
+# 	pass
+
+
+
+
+def scatterplot_qset( request, qset = None, title = None, fields = None, greet = None, crit = [], **kwargs):
 	# title = 
 	# title = 'No_title' if 'title' not in kwargs else title
 	# greet = 'No greeting was provided' if not 'greet' in kwargs else greet
@@ -714,7 +648,10 @@ def scatterplot_qset( request, qset = None, title = None, fields = None, greet =
 	# print(kwargs.has_key('subplot_kwargs'))
 	# labels = list(qset.values_list('domain__domain_id',flat=True))
 	# print kwargs.keys()
-	jdict = scatterplot_qset_dict(qset.filter(*filter), fields = fields, **kwargs)
+	if crit:
+		qset = qset.filter(*crit)
+
+	jdict = scatterplot_qset_dict( qset, fields = fields, **kwargs)
 	jdict['success'] = True
 	jdict['errmsg'] = 'Successful'
 
@@ -734,6 +671,11 @@ def scatterplot_qset( request, qset = None, title = None, fields = None, greet =
 	return render(request,
 			 'tst/nbscatter_template.html',
 			  context)
+
+
+
+
+
 
 
 def scatterplot_domain(request,
@@ -816,11 +758,9 @@ def scatterplot_homsf(request,
 	qset =  classification.homsf_objects.filter( **crit )
 
 	fields  = [
-		# 'domain__domain_stat__res_count',
 		's35_count',
 		'node_stat__Rsq_NBcount_Acount',
 		'id',
-		# 'superfamily',
 		]
 
 	kwargs = 	{
@@ -847,16 +787,16 @@ def scatterplot_homsf(request,
 		**kwargs
 		)
 
+
+
+
+
+
 def scatterplot_hit4cath2cath(request, 
 	qset = None,
 	# crit = {'s35_count__gt':10,}	
 	):
-	# qset = request.session.get("qset", None)
-	# homsf = select_homsf(homsf_id)
-	# qset = homsf.classification_set
-	# crit = 
-	# qset =  classification.homsf_objects.filter( **crit )
-	# label = 0;
+
 	fields  = [
 		# 'domain__domain_stat__res_count',
 		'hcount_geoavg',
@@ -875,6 +815,9 @@ def scatterplot_hit4cath2cath(request,
 		# 'xlim':[0,500],
 		# 'xlim':[0,500E1],
 		# 'ylim':[0,800E3],
+		'xoffset': 1,
+		'yoffset': 1,
+
 		'xlabel': field_short[fields[0]],
 		# 'ylabel':'Rsq_NBcount_Acount',
 		'ylabel': field_short[fields[1]],
@@ -892,7 +835,64 @@ def scatterplot_hit4cath2cath(request,
 		# title = 'superfamily %s' % homsf_id,
 		**kwargs
 		)
-def scatterplot_hit4cath2cath__test(request, 
+
+
+def scatterplot__hitlistPR(request, 
+	qset = None,
+	# crit = {'s35_count__gt':10,}	
+	):
+	qset = hitlistPR__param2qset(request)
+	if isinstance(qset, list):
+		qset = fake__query_set(qset)
+
+	fields  = [
+		'hit1__bitscore',
+		'hit2__bitscore',
+		'id',
+		# 'superfamily',
+		]
+
+	kwargs = 	{
+	'title': 'hit4cath2cath' ,
+	'greet': greets["scatterplot_hit4cath2cath"],
+	# 'You are looking at a collection of %s'%qset[0].level.name,	
+	'subplot_kwargs':{
+		'logx': False,
+		'logy': False,
+		# 'xlim':[0,500],
+		'xlim':[0,200],
+		'ylim':[0,200],
+		# 'xlabel': field_short[fields[0]],
+		# 'ylabel':'Rsq_NBcount_Acount',
+		# 'ylabel': field_short[fields[1]],
+		# 'xscale': 'log',
+		# 'yscale': 'log',
+		'regress': False,
+		},
+	'labels': [ str(q) for q in qset],
+	}
+	return scatterplot_qset(
+		request,
+		qset,
+		fields = fields,
+		# title = 'superfamily %s' % homsf_id,
+		**kwargs
+		)
+
+
+def test__scatterplot__hitlistPR(request, 
+	qset = None,
+	# crit = {'s35_count__gt':10,}	
+	):
+	sDB_dict = {
+	'name':'CATH',
+	'version':'v4_1_0',
+	}
+	sDB = seqDB.objects.get(**sDB_dict)
+	qset = hitlist_compare(sDB = sDB)
+	return scatterplot__hitlistPR(request,qset)
+
+def test__scatterplot_hit4cath2cath(request, 
 	# crit = {'s35_count__gt':10,}	
 	):
 
@@ -902,7 +902,11 @@ def scatterplot_hit4cath2cath__test(request,
 	qset = qset.order_by('-ISS_norm')
 	qset = qset.exclude(ISS_norm__gte=0.7)
 	qset = qset[:1000]
-	return scatterplot_hit4cath2cath(request,qset)
+	return scatterplot_hit4cath2cath(request, qset)
+
+
+
+
 
 
 def scatterplot_domain_maha(request):
@@ -911,20 +915,8 @@ def scatterplot_domain_maha(request):
 	# qset = domain.objects.order_by('-domain_stat__maha_dist')[:1000]#
 	qset = classification.objects.exclude(domain__domain_stat__isnull = True)
 	qset = qset.order_by('-domain__domain_stat__maha_dist')[:1000]#
-	# qset = classification.objects.order_by('-domain__domain_stat__maha_dist')[:1000]#
 
-	# fields = [
-	# 	# 'classification__parent__node_stat__Rsq_NBcount_Acount',
-	# 	# 'domain_stat__maha_dist',
-	# 	# 'classification__parent__node_stat__Rsq_NBcount_Acount',
-	# 	'domain_stat__pcx',
-	# 	'domain_stat__pcy',
-	# 	'id',
-	# 	]
 	fields = [
-		# 'classification__parent__node_stat__Rsq_NBcount_Acount',
-		# 'domain_stat__maha_dist',
-		# 'classification__parent__node_stat__Rsq_NBcount_Acount',
 		'domain__domain_stat__pcx',
 		'domain__domain_stat__pcy',
 		'domain__id',
