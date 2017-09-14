@@ -3,6 +3,9 @@ from django.conf.urls import url,include
 from . import views
 
 urlpatterns = [
+
+    # url(r'^publishers/$', views.PublisherList.as_view()),
+
     # ex: /tst/
     # url(r'^$', views.index, name='index'),
 
@@ -18,9 +21,12 @@ urlpatterns = [
     url(r'^hmm_compare$', views.test__hmm_compare, name='hmm_compare'),
 
     url(r'^hitlist_compare/$', views.tab__hitlist__pair, name='tab__hitlist__pair'),
+    url(r'^figure/tst/hitlist_compare/$', views.scatterplot__hitlistPR,),
+    # url(r'^figure/tst/hitlist_compare$', views.test__scatterplot__hitlistPR, name='test'),
+
+    # url(r'^figure/tst/test/CCXhit_homsf$', views.test__scatterplot_hit4cath2cath, name= 'test'),
 
     url(r'^CCXhit/$', views.test__CCXhit, name='CCXhit_handler'),
-
 
 
     # ex: /tst/5/
@@ -75,8 +81,8 @@ urlpatterns = [
 
 
 
-    url(r'^figure/hit4cath2cath$', views.scatterplot_hit4cath2cath__test, name= 'test'),
-    url(r'^figure/tst/test/CCXhit_homsf$', views.scatterplot_hit4cath2cath__test, name= 'test'),
+    url(r'^figure/hit4cath2cath$', views.test__scatterplot_hit4cath2cath, name= 'test'),
+    url(r'^figure/tst/test/CCXhit_homsf$', views.test__scatterplot_hit4cath2cath, name= 'test'),
 
     # url(r'^figure/handler/$',views.scatterplot_qset,name='figure_handler'),
     # url(r'^figure/superfamily/(?P<homsf_id>[\d,\.]+)/$', views.scatterplot_homsf,name='fig_nbscatter'),
