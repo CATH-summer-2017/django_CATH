@@ -74,6 +74,50 @@ $(function () {
   $('[data-toggle="popover"]').popover()
 })
 
+
+function addParameter(url, parameterName, parameterValue, atStart/*Add param before others*/){
+    replaceDuplicates = true;
+    if(url.indexOf('#') > 0){
+        var cl = url.indexOf('#');
+        urlhash = url.substring(url.indexOf('#'),url.length);
+    } else {
+        urlhash = '';
+        cl = url.length;
+    }
+    sourceUrl = url.substring(0,cl);
+
+    var urlParts = sourceUrl.split("?");
+    var newQueryString = "";
+
+    if (urlParts.length > 1)
+    {
+        var parameters = urlParts[1].split("&");
+        for (var i=0; (i < parameters.length); i++)
+        {
+            var parameterParts = parameters[i].split("=");
+            if (!(replaceDuplicates && parameterParts[0] == parameterName))
+            {
+                if (newQueryString == "")
+                    newQueryString = "?";
+                else
+                    newQueryString += "&";
+                newQueryString += parameterParts[0] + "=" + (parameterParts[1]?parameterParts[1]:'');
+            }
+        }
+    }
+    if (newQueryString == "")
+        newQueryString = "?";
+
+    if(atStart){
+        newQueryString = '?'+ parameterName + "=" + parameterValue + (newQueryString.length>1?'&'+newQueryString.substring(1):'');
+    } else {
+        if (newQueryString !== "" && newQueryString != '?')
+            newQueryString += "&";
+        newQueryString += parameterName + "=" + (parameterValue?parameterValue:'');
+    }
+    return urlParts[0] + newQueryString + urlhash;
+};
+
 </script>
 
  </head>
@@ -128,13 +172,13 @@ DEBUG: This page is: {{request.get_full_path}}
 <section>
 
 {% url 'figure_reverse' request.get_full_path as fig_url %}
-{% url 'figure_reverse' request.path as fig_url %}
+<!-- {% url 'figure_reverse' request.path as fig_url %} -->
 
 <p>
-<button class="btn btn-primary" type="button" id="view_plot" onclick="plot_window( '{{fig_url}}' + '\?scatter=raw');">
+<button class="btn btn-primary" type="button" id="view_plot" onclick="plot_window( addParameter('{{fig_url}}','scatter','raw') + '&{{ request.GET.urlencode }}' );">
  Raw Scatter Plot
 </button>
-<button class="btn btn-primary" type="button" id="view_plot" onclick="plot_window( '{{fig_url}}' + '\?scatter=pcnorm' );">
+<button class="btn btn-primary" type="button" id="view_plot" onclick="plot_window( addParameter('{{fig_url}}','scatter','pcnorm') + '&{{ request.GET.urlencode }}'' );">
  PC-Normalised Scatter Plot
 </button>
 
