@@ -1,0 +1,17 @@
+{% load util_filter %}	
+  			<tr id="dbid_{{d.id}}" class="clickable-row">
+					{% for f in field_names %}
+					<th> 
+          {% with col=d|getattribute_iter:f  %}
+  
+            {% if col|get_type  == 'float' or col|get_type  == 'long' %}
+                {{ col|floatformat:3}}
+            {% else %}
+                {{col}}                {# Oh no! #}
+            {% endif %}
+
+          {% endwith %}
+          </th>
+
+					{% endfor %}
+				</tr>

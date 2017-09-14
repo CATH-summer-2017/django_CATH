@@ -37,7 +37,10 @@ class blankobj(object):
 		pass
 
 
-
+# class tabModel(models.Model):
+# 	def __init__(self,**kwargs):
+# 		models.Model.__
+# 	pass
 
 class homsf_manager(models.Manager):
 	def get_queryset(self):
@@ -50,6 +53,19 @@ class homsf_manager(models.Manager):
 			  )
 		# for homsf_qset 
 		return homsf_qset
+
+class homsf_manager(models.Manager):
+	def get_queryset(self):
+		homsf_qset = super(homsf_manager, self).get_queryset().filter(level_id=5);
+		homsf_qset = (homsf_qset.annotate(nDOPE_std=StdDev("classification__domain__nDOPE"))
+			  .annotate(nDOPE_avg=Avg("classification__domain__nDOPE"))
+			  .annotate(s35_count=Count("classification"))
+			  .annotate(s35_len_avg=Avg("classification__domain__domain_length"))
+			  # .annotate(superfamily="superfamily")
+			  )
+		# for homsf_qset 
+		return homsf_qset
+
 
 class node_manager(models.Manager):
 
@@ -136,9 +152,11 @@ class level(models.Model):
 	def __str__(self):
 		return self.name;
 
+
+dft = 0
 class classification(models.Model):	
 	# homsf_ID = models.CharField(max_length=7, primary_key=True)
-	dft = 0
+	# DFcols =
 
 	Class = models.IntegerField(default=dft,null=True,db_index=True)
 	arch = models.IntegerField(default=dft,null=True,db_index=True)
@@ -191,6 +209,8 @@ class classification(models.Model):
 		cnt = fetch_cath(url)[1]["child_count_s35_code"]
 		return cnt
 
+	def child_count(self):
+			return self.classification_set.count()
 
 
 	# objects = models.Manager()
@@ -201,6 +221,15 @@ class classification(models.Model):
 	# 	return("Superfamily %s"%self.homsf_ID())
 
 class node_stat(models.Model):
+	default_cols = [
+	'node__superfamily_urled',
+	'node__child_count',
+	'Rsq_NBcount_Rcount',
+	'Rsq_NBcount_Acount',
+	'node__version__name',
+					# 's35_len_avg','nDOPE_avg','nDOPE_std',
+					]
+
 	node = models.OneToOneField(classification,
 		on_delete= models.CASCADE,
 		primary_key=True)
@@ -211,6 +240,17 @@ class node_stat(models.Model):
 
 
 class domain(models.Model):
+	default_cols = [
+			'domain_id_urled',
+			'superfamily_urled',
+			'view_chopped',
+			'sf_s35cnt',
+			'residue_count',
+			'atom_count',
+			# 'nDOPE',
+			'nbpair_count',
+			'domain_stat__maha_dist',
+			'classification__version__name',]
 	domain_id = models.CharField(max_length=7,db_index=True)
 	domain_length = models.IntegerField(default=0,null=True)
 	resolution = models.FloatField(default=0,null=True)
@@ -383,6 +423,15 @@ class hit4hmm2hsp(models.Model):
 
 bfmt = '<b>%s</b>' 
 class hit4cath2cath(models.Model):
+	default_cols = ['node1',
+	'node2','xhit_urled',
+	'local_CCXhit',
+	'compare_hitlist',
+	'node1__hit_summary_set__all?__0__hcount',
+	'node2__hit_summary_set__all?__0__hcount',
+	'hcount_geoavg',
+    'ISS_raw', 'ISS_norm']
+    
 	node1 = models.ForeignKey( classification, on_delete = models.CASCADE, related_name = 'node1')
 	node2 = models.ForeignKey( classification, on_delete = models.CASCADE, related_name = 'node2')
 	ISS_raw = models.IntegerField( default = None  )
@@ -418,7 +467,7 @@ class hit4cath2cath(models.Model):
 	def __str__(self):
 		# return "Node 1: %s,  Node 2: %s,  "
 		# basefmt = 
-		raw_msg = "[Node1: %s ,Node2: %s]" % (
+		raw_msg = "[HMM-HMM hit]:[Node1: %s ,Node2: %s]" % (
 			self.node1,
 			self.node2, 
 			)
@@ -537,6 +586,17 @@ class hit_summary(models.Model):
 
 
 class hitP_obj(blankobj):
+	default_cols = [
+	# 'id',
+	'hit1__target__acc',
+	'hit1__target__GETcath_node',
+	'hit1__start',
+	'hit1__end',
+	'hit2__end',
+	'hit2__start',
+	'hit1__bitscore',
+	'hit2__bitscore',
+	]
 	def __init__(self,**kwargs):
 		return blankobj.__init__(self, **kwargs)
 		# return super(hitP_obj, self).__init__(**kwargs)

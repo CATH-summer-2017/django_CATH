@@ -8,6 +8,7 @@
 </div>
 
   <table class="table table-bordered">
+
 {% load util_filter %}
 
 
@@ -28,7 +29,7 @@ Print the Legend table
   <tr>
     <th>
 
-      {% with fshort=field_short|getattribute_none:f %}
+      {% with fshort=meta.field_short|getattribute_none:f %}
 
         {% if  fshort == "None" %}
         {{f}}
@@ -42,7 +43,7 @@ Print the Legend table
     </th>
     <th colspan="3">
       <span class="not_bold">
-      {{field_readable|getattribute_none:f}}
+      {{meta.field_readable|getattribute_none:f}}
       </span>
     </th>
   </tr>
@@ -52,12 +53,5 @@ Print the Legend table
 
   </table>
 
-
-  <section>
-
-
-
-
-  </section>
 
 </div>

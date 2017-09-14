@@ -24,7 +24,6 @@ from .utils import *
 import sys,os
 
 
-
 import cPickle as pk
 
 
@@ -36,6 +35,13 @@ from django.views.generic import ListView
 #	 model = Publisher
 
 
+cols = ['superfamily_urled','s35_count',
+					'node_stat__Rsq_NBcount_Rcount',
+					'node_stat__Rsq_NBcount_Acount',
+					'version__name',
+					# 's35_len_avg','nDOPE_avg','nDOPE_std',
+					],		
+					
 
 
 
@@ -57,6 +63,7 @@ class TemplateView(View):
 field_short = {
 	"domain_id_urled":"Domain",
 	"superfamily_urled":"Superfamily",
+	"node__superfamily_urled":"Superfamily",
 	# "view_chopped":"PDBview",
 	"view_chopped":"<img src=\"/static/imgs/rasmol.png\" alt=\"chopped_pdb\">",
 	"sf_s35cnt": "Superfamily Size",
@@ -68,6 +75,8 @@ field_short = {
 	"domain_stat__maha_dist":"outlier_score",
 	"hcount_geoavg":"average hit count",
 	"ISS_raw":"ISS_raw",
+	"node1__hit_summary_set__all?__0__hcount":"node1_hcount",
+	"node2__hit_summary_set__all?__0__hcount":"node2_hcount",
 	# "hit1__bitscore":"hit1__bitscore"
 	# "": ,
 }
@@ -226,7 +235,7 @@ def view3d(request):
 
 #### Common function to render a table view
 
-def view_qset(request, query_set, orders = None, cols = None,title = None,page_caption = None ):
+def view_qset(request, query_set, orders = None, cols = None,title = None,page_caption = None, **kwargs):
 ###################################################################################
 ###################################################################################
 ## Arguments: 1. request: the HTTP request to be rendered #########################
@@ -277,15 +286,19 @@ def view_qset(request, query_set, orders = None, cols = None,title = None,page_c
 	if "page_caption" not in locals().keys():
 		page_caption = "No caption is provided for this page"
 
+	meta = {
+			'title':title,
+			'field_readable':field_readable,
+			'field_short':field_short,
+			'page_caption': page_caption,
+			}
+	meta.update(kwargs)
+	print meta.keys()
+
 	context = {
 		'query_set':query_set,
-		'tst_a':0,	
-		's35cnts':[],
 		'field_names':cols,
-		'title':title,
-		'field_readable':field_readable,
-		'field_short':field_short,
-		'page_caption': page_caption,
+		'meta': meta
 		}
 	return render(request,
 				 # 'tst/index.html',
@@ -415,15 +428,19 @@ def test__hmm_compare(request,hmm1__id = None,hmm2__id = None, sDB = None):
 	# pass
 
 
-
+###### OLD ############
 class fake__query_set(list):
 	def __init__(self, data):
 		self.data  =  data
+		list.__init__(self, data)
 
-	def __iter__(self):
-		return (x for x in self.data)
-	def __len__(self):
-		return len(self.data)
+	def __getitem__(self, key):
+		return list.__getitem__(self, key)
+		# list.__init__(data)
+	# def __iter__(self):
+	# 	return (x for x in self.data)
+	# def __len__(self):
+	# 	return len(self.data)
 
    	def values_list(self, *args ):
 		# its = []
@@ -432,6 +449,35 @@ class fake__query_set(list):
 
 	def filter(self):
 		raise Exception("Yet to be implemented ")
+
+	def order_by(self, *args, **kwargs):
+		return self
+
+
+
+class fake__query_set(list):
+	def __init__(self, *args):
+		# self.data  =  data
+		list.__init__(self, *args)
+
+	def __getitem__(self, key):
+		return list.__getitem__(self, key)
+		# list.__init__(data)
+	# def __iter__(self):
+	# 	return (x for x in self.data)
+	# def __len__(self):
+	# 	return len(self.data)
+
+   	def values_list(self, *args):
+		# its = []
+		its = [ [getattribute_iter( q, attr) for q in self ] for attr in args]
+		return izip(*its)
+
+	def filter(self):
+		raise Exception("Yet to be implemented ")
+
+	def order_by(self, *args, **kwargs):
+		return self
 
 # class 
 
@@ -453,12 +499,17 @@ def hitlistPR__param2qset(request):
 		node1__id,
 		node2__id, 
 		sDB )
-
-	return qset
+	node__ids = sorted([node1__id,node2__id])
+	try:
+		parent = hit4cath2cath.objects.get(node1 = node__ids[0], node2 = node__ids[1], seqDB = sDB)
+	except:
+		parent = None
+	return qset,parent
+	# return ( [ qset, parent])
 def tab__hitlist__pair(request, ):
 	# (node1__id,node2__id,sDB_dict) = parse__hitlistPR__param(request)
 
-	qset = hitlistPR__param2qset(request)
+	qset,parent = hitlistPR__param2qset(request)
 
 
 	cols = [
@@ -480,6 +531,7 @@ def tab__hitlist__pair(request, ):
 		qset, 
 		cols = cols,
 		title = title,
+		parent = parent
 		)
 	return response
 
@@ -568,10 +620,14 @@ def homsf_collection(request, homsf_id = None,
 		# 	classification.homsf_objects.filter(nDOPE_std__gte = 0.1 ))
 		homsf_list = classification.homsf_objects.filter(**crit)
 		# homsf_list = classification.homsf_objects.filter(s35_count__lte=100).filter(s35_count__gte=10)
+		qset = node_stat.objects.in_bulk( homsf_list.values_list('node_stat', flat = True) ).values()
+		qset = fake__query_set( qset )
 
-		return view_qset(request,homsf_list,
+		return view_qset(request, 
+			# homsf_list,
+			qset,
 				# orders = ['-nDOPE_std'],
-				orders = ['node_stat__Rsq_NBcount_Acount'],
+				# orders = ['node_stat__Rsq_NBcount_Acount'],
 
 				# cols = ['superfamily_urled','s35_count','s35_len_avg','nDOPE_avg','nDOPE_std'],
 				cols = ['superfamily_urled','s35_count',
@@ -595,6 +651,7 @@ def homsf2domain(homsf_id):
 		# qsetlst = (n.domain for n in qset)
 		# qset = reduce(lambda x, y: x | y, qsetlst, domain.objects.none())
 		# qset = domain.objects.filter(classification__in=qset.classification_set.all())
+		parent = None
 
 	else:
 		homsf = classification.objects.get_bytree( homsf_id )[0]
@@ -602,7 +659,11 @@ def homsf2domain(homsf_id):
 		# domain_list = domain_list.order_by('-nDOPE')
 
 		qset = qset.order_by('-domain_stat__maha_dist')
-	return qset
+		try:
+			parent = homsf.node_stat
+		except:
+			parent = None
+	return qset,parent
 
 def domain_collection(request, homsf_id = None,
 	# crit = {'s35_count__gt':10,},
@@ -610,14 +671,15 @@ def domain_collection(request, homsf_id = None,
 	'''
 	specifying qset		
 	'''
-	qset = homsf2domain(homsf_id)
+	qset,parent = homsf2domain(homsf_id)
 	# cols = ['domain_id','superfamily_urled','sf_s35cnt','domain_length','nDOPE'];
 	cols = [];
 	return view_qset(
 		request,
 		qset,
 		cols=cols,
-		title = "s35reps from %s" % (homsf_id) 
+		title = "s35reps from %s" % (homsf_id) ,
+		parent = parent,
 							)
 
 
@@ -685,7 +747,7 @@ def scatterplot_domain(request,
 	# qset = homsf.classification_set.all()
 	scatter = request.GET.get('scatter','raw')
 
-	qset = homsf2domain(homsf_id)
+	qset,parent = homsf2domain(homsf_id)
 	try:
 		qset = qset.exclude(domain_stat__isnull = True) ##### IMP!! This is incompatible with the slicing , need to implement slicing afterwards
 	except Exception as e:
@@ -841,7 +903,7 @@ def scatterplot__hitlistPR(request,
 	qset = None,
 	# crit = {'s35_count__gt':10,}	
 	):
-	qset = hitlistPR__param2qset(request)
+	qset,parent = hitlistPR__param2qset(request)
 	if isinstance(qset, list):
 		qset = fake__query_set(qset)
 

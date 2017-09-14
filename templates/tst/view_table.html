@@ -122,7 +122,7 @@ function addParameter(url, parameterName, parameterValue, atStart/*Add param bef
 
  </head>
 
-<title>{{title}}</title>
+<title>{{meta.title}}</title>
 <body>
 
 
@@ -138,26 +138,49 @@ Doped_CATH is a data browser that highlights badly-chopped domains using both st
   </h3>
 </div>
 
+
+{% autoescape off %}
+<p class="lead">
+
+Parent: <br/> Type: {{ meta.parent | to_class_name }} <br/>
+
+{% if meta.parent %}
+
+  {% with field_names=meta.parent.default_cols %}
+    <table class="table table-sm table-bordered">
+      {% include "./table_head.html" %}
+      <tbody>     
+        {% with d=meta.parent %}
+          {% include "./table_row_attr.html" %}      
+        {% endwith %}
+      </tbody>
+    </table>
+
+  {% endwith %}
+
+{% endif %}
+<br/>
+</p>
+<p class="lead">
+How to:<br/>
+{{meta.page_caption}}
+<br/>
+</p>
+
+
 <div class="mt-1">
   <p>
   <h4 class="display-5">
-  Listing {{title}}
+  Listing {{query_set.0 | to_class_name}}
   </h4>
   ({{query_set|length}} entries on the page)
   </p>
 </div>
 
-{% autoescape off %}
-<p class="lead">
-
-How to:<br/>
-{{page_caption}}
-<br/>
-</p>
 
 {# <p>Enries are ordered by </p> #}
-
 {# Another pargarph #}
+
 <p class="table-heading">
 DEBUG: This page is: {{request.get_full_path}} 
 </p>
@@ -178,7 +201,7 @@ DEBUG: This page is: {{request.get_full_path}}
 <button class="btn btn-primary" type="button" id="view_plot" onclick="plot_window( addParameter('{{fig_url}}','scatter','raw') + '&{{ request.GET.urlencode }}' );">
  Raw Scatter Plot
 </button>
-<button class="btn btn-primary" type="button" id="view_plot" onclick="plot_window( addParameter('{{fig_url}}','scatter','pcnorm') + '&{{ request.GET.urlencode }}'' );">
+<button class="btn btn-primary" type="button" id="view_plot" onclick="plot_window( addParameter('{{fig_url}}','scatter','pcnorm') +'&{{ request.GET.urlencode }}' );">
  PC-Normalised Scatter Plot
 </button>
 
@@ -188,6 +211,8 @@ DEBUG: This page is: {{request.get_full_path}}
 
 {# {% autoescape off %} #}
 
+
+
 {% include "./table_legend.html" %}
 
 </p>
@@ -195,64 +220,41 @@ DEBUG: This page is: {{request.get_full_path}}
 
 
 {% if query_set|length %}
+
+
+{% with field_names=query_set.0.default_cols %}
+
+
 {# {% url 'fig_nbscatter' query_set.0.superfamily as fig_url %} #}
-    <table class="table table-sm table-bordered">
-		<thead>
+  <table class="table table-sm table-bordered">
 
-        {% for f in field_names %}
-          <th>
-            {% with fshort=field_short|getattribute_none:f %}
-              {% if  fshort == "None" %}
-              {{f}}
-              {% else %}
-              {{fshort}}
-              {% endif %}
-            {% endwith %}
-          </th>
-        {% endfor %}      
-		</thead>
-		<tbody>
-			
+  {% include "./table_head.html" %}
 
+	<tbody>			
 			{# {% autoescape off %} #}
-
 
 			{% for d in query_set %}
 
-				<tr id="dbid_{{d.id}}" class="clickable-row">
-					{% for f in field_names %}
-
-					<th> 
-          {% with col=d|getattribute_iter:f  %}
-  
-            {% if col|get_type  == 'float' or col|get_type  == 'long' %}
-                {{ col|floatformat:3}}
-            {% else %}
-                {{col}}                {# Oh no! #}
-            {% endif %}
-  
-          {% endwith %}
-          </th>
-
-					{% endfor %}
-				</tr>
+        {% include "./table_row_attr.html" %}
 
 				<tr>
 	        		<td colspan="10">
 	            		{# <div id="view_{{d.domain_id}}" class="collapse" pdb-url="http://www.cathdb.info/version/current/api/rest/id/{{d.domain_id}}.pdb"> #}
-	            		{# halsdfhlsadf #}
-	            		{# sadfjksadlfjl #}
 							{# <div id="container" class="mol-container"></div> #}
 	            		{# </div> #}
-						{% include "./PDBcollapse.html" %}
+                  
+						  {% include "./PDBcollapse.html" %}
 
-	        		</td>
-			    </tr>
+	         		</td>
+			  </tr>
 		
 			{% endfor %}
 
 		</tbody>
 	</table>
+
+{% endwith %}
+
 {% else %}
     <p>No domain list is provided.</p>
 {% endif %}

@@ -1,0 +1,16 @@
+{% load util_filter %}
+
+		<thead>
+
+        {% for f in field_names %}
+          <th>
+            {% with fshort=meta.field_short|getattribute_none:f %}
+              {% if  fshort == "None" %}
+              {{ f }}
+              {% else %}
+              {{fshort}}
+              {% endif %}
+            {% endwith %}
+          </th>
+        {% endfor %}      
+		</thead>
