@@ -165,7 +165,7 @@ class RectPlugin(mpld3.plugins.PluginBase):
 
 
 def scatterplot_dict(xs,y2s,ids, colors = None,lbls=None, forced_lbls=None, regress = True, show = False,
-  logx = False, logy = False,
+  logx = False, logy = False, xoffset = 0, yoffset = 0,
   **kwargs):   
     if not lbls:
         lbls = ids
@@ -210,14 +210,19 @@ def scatterplot_dict(xs,y2s,ids, colors = None,lbls=None, forced_lbls=None, regr
     xs = np.array(xs);
     y2s = np.array(y2s)
 
+    if xoffset:
+      xs = xs + xoffset
+    if yoffset:
+      y2s = y2s + yoffset
+
     if logx:
       xs = np.log(xs)
-      xlabel = "log( %s )" % kwargs.get("xlabel","x")
+      xlabel = "log( %s + %s )" % (kwargs.get("xlabel","x") , xoffset)
       kwargs["xlabel"] = xlabel
 
     if logy:
       y2s = np.log(y2s)
-      ylabel = "log( %s )" % kwargs.get("ylabel","y")
+      ylabel = "log( %s + %s )" % (kwargs.get("ylabel","y") , yoffset)
       kwargs["ylabel"] = ylabel
 
     # 
