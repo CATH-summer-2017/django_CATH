@@ -60,6 +60,10 @@ from tst.domutil import util
 def get_type(value):
     return type(value).__name__
 
+@register.filter
+def to_class_name(value):
+    return value.__class__.__name__
+
 register.filter('getattribute', util.getattribute)
 register.filter('getattribute_iter', util.getattribute_iter)
 register.filter('getattribute_none', util.getattribute_none)
