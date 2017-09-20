@@ -31,6 +31,10 @@ import cPickle as pk
 from django.views.generic import ListView
 
 
+from django.urls import reverse
+import copy
+
+
 # class PublisherList(ListView):
 #	 model = Publisher
 
@@ -510,6 +514,7 @@ def tab__hitlist__pair(request, ):
 	# (node1__id,node2__id,sDB_dict) = parse__hitlistPR__param(request)
 
 	qset,parent = hitlistPR__param2qset(request)
+	# raise Exception('/tst/figure' + request.get_full_path())
 
 
 	cols = [
@@ -525,13 +530,47 @@ def tab__hitlist__pair(request, ):
 	]
 
 	title = 'ISS_hitlists'
+	
+	figurl = '/tst/figure' + request.get_full_path()
+	buttons = []
+	buttons +=[ blankobj( 
+	# url = reverse(scatterplot_domain,args=[x for x in [homsf_id] if x]),
+	url = figurl,
+	text = '''[scatter]<br/>
+	x: hit1__bitscore<br/>
+	y: hit2__bitscore''',
+	)
+	]
+
+	# request
+	fakereq = copy.copy(request)
+	# if not fakereq.GET._mutable:
+	# 	fakereq.GET._mutable = True
+	# fakereq.GET = fakereq.GET
+	Gdict = request.GET.copy()
+	Gdict['fields'] =  ' '.join(['geoavg','overlap','id'])
+	# fakereq._load_post_and_files()
+
+	# raise Exception(fakereq.get_full_path())
+	# raise Exception(fakereq.GET)
+	# request.GET.update({'fields': ' '.join(['geoavg','overlap','id'])} )
+	buttons +=[ blankobj( 
+	# url = reverse(scatterplot_domain,args=[x for x in [homsf_id] if x]),
+	url = '/tst/figure%s?%s' % ( fakereq.path , Gdict.urlencode() ),
+	text = '''[scatter]<br/>
+	x: average hit span<br/>
+	y: overlap hit span''',
+	)
+	]
+
 
 	response = view_qset(
 		request,
 		qset, 
 		cols = cols,
 		title = title,
-		parent = parent
+		parent = parent,
+		buttons = buttons,
 		)
 	return response
 
@@ -540,23 +579,26 @@ def tab__hitlist__pair(request, ):
 # dict_hit2tid = dict(hit4hmm2hsp.objects.values_list('id','target__id'))
 
 # def hitlist_compare(request, node1__id = None, node2__id = None, sDB = None, **kwargs):
+def init__CCXhit_homsf():
+	letter = 'H'
+	rv_field = reverse_field[letter]
+	qset = CCXhit.filter(node1__level__letter='H') 
+	qset = qset.order_by('-ISS_norm')
+	qset = qset.exclude(ISS_norm__gte=0.7).exclude(ISS_raw__lte=10)
+
+	qset = qset[:1000]
+	return qset
 
 def test__CCXhit_homsf(request):
 	# hit4cath2cath.objects.values_list('node1__id'.'node2__id')
 	# qset = hit4cath2cath.objects.exclude(node1__parent=F("node2__parent") ) 
 	# qset = CCXhit.exclude(ISS_norm__gte=0.9) 
-	letter = 'H'
-	rv_field = reverse_field[letter]
-	qset = CCXhit.filter(node1__level__letter='H') 
-	qset = qset.order_by('-ISS_norm')
-	qset = qset.exclude(ISS_norm__gte=0.7)
-
-	qset = qset[:1000]
 	# .prefetch_related(["node1__hmmprofile","node2__hmmprofile"])
 	# qset = qset.annotate(
 	# 	# node1_hitCount = Count("node1__hmmprofile__hits"), 
 	# 	# node2_hitCount = Count("node2__hmmprofile__hits"),
 	# 		)
+	qset = init__CCXhit_homsf()
 
 	cols = ['node1',
 	# 'node1__id','node2__id',
@@ -574,11 +616,21 @@ def test__CCXhit_homsf(request):
 	   'ISS_raw', 'ISS_norm']
 	title = 'ISS_test'
 	# orders = []
+
+	figurl = '/tst/figure' + request.get_full_path()
+	button1 = blankobj( 
+		url = figurl,
+		text = '''[scatter]<br/>
+		x: ISS_raw<br/>
+		y: average hit ''',
+		)
+
 	response = view_qset(
 		request,
 		qset, 
 		cols = cols,
 		title = title,
+		buttons = [button1],
 		)
 	return response 
 
@@ -623,6 +675,17 @@ def homsf_collection(request, homsf_id = None,
 		qset = node_stat.objects.in_bulk( homsf_list.values_list('node_stat', flat = True) ).values()
 		qset = fake__query_set( qset )
 
+		figurl = '/tst/figure' + request.get_full_path()
+		buttons = []
+		buttons +=[ blankobj( 
+		# url = reverse(scatterplot_domain,args=[x for x in [homsf_id] if x]),
+		url = figurl,
+		text = '''[scatter]<br/>
+		x: superfamily size<br/>
+		y: R-squared''',
+		)
+		]
+
 		return view_qset(request, 
 			# homsf_list,
 			qset,
@@ -635,7 +698,8 @@ def homsf_collection(request, homsf_id = None,
 					'node_stat__Rsq_NBcount_Acount',
 					'version__name',
 					# 's35_len_avg','nDOPE_avg','nDOPE_std',
-					],				
+					],
+				buttons = buttons,		
 				)
 	else:
 		pass
@@ -674,12 +738,33 @@ def domain_collection(request, homsf_id = None,
 	qset,parent = homsf2domain(homsf_id)
 	# cols = ['domain_id','superfamily_urled','sf_s35cnt','domain_length','nDOPE'];
 	cols = [];
+
+	figurl = '/tst/figure' + request.get_full_path()
+	buttons = []
+	buttons +=[ blankobj( 
+	# url = reverse(scatterplot_domain,args=[x for x in [homsf_id] if x]),
+	url = figurl,
+	text = '''[scatter]<br/>
+	x: atom count<br/>
+	y: nbpair count''',
+	)
+	]
+	buttons +=[ blankobj( 
+	# url = reverse(scatterplot_domain,args=[x for x in [homsf_id] if x]) + '?scatter=pcnorm',
+	url = figurl + '?scatter=pcnorm',
+	text = '''[scatter]<br/>
+	x: protein size<br/>
+	y: packedness''',
+	)
+	]
+	# raise Exception(request.path)
 	return view_qset(
 		request,
 		qset,
 		cols=cols,
 		title = "s35reps from %s" % (homsf_id) ,
 		parent = parent,
+		buttons = buttons,
 							)
 
 
@@ -704,6 +789,8 @@ def scatterplot_qset( request, qset = None, title = None, fields = None, greet =
 	# jdict = scatterplot_homsf_dict(qset,fields = fields, **kwargs)
 	# print kwargs.get('greet')
 	# print(subplot_kwargs,'\n\n')
+
+
 	fields_t = request.GET.get('FigFields','+'.join(fields))
 	# filter = request.GET.get('FigFilter','+'.join(filter)).split('+')
 	# print(fields_t)
@@ -907,12 +994,15 @@ def scatterplot__hitlistPR(request,
 	if isinstance(qset, list):
 		qset = fake__query_set(qset)
 
+
 	fields  = [
 		'hit1__bitscore',
 		'hit2__bitscore',
 		'id',
 		# 'superfamily',
 		]
+	fields = request.GET.get("fields", ' '.join(fields)).split()
+
 
 	kwargs = 	{
 	'title': 'hit4cath2cath' ,
@@ -958,12 +1048,14 @@ def test__scatterplot_hit4cath2cath(request,
 	# crit = {'s35_count__gt':10,}	
 	):
 
-	letter = 'H'
-	rv_field = reverse_field[letter]
-	qset = CCXhit.filter(node1__level__letter='H') 
-	qset = qset.order_by('-ISS_norm')
-	qset = qset.exclude(ISS_norm__gte=0.7)
-	qset = qset[:1000]
+	# letter = 'H'
+	# rv_field = reverse_field[letter]
+	# qset = CCXhit.filter(node1__level__letter='H') 
+	# qset = qset.order_by('-ISS_norm')
+	# qset = qset.exclude(ISS_norm__gte=0.7)
+	# qset = qset[:1000]
+	qset = init__CCXhit_homsf()
+
 	return scatterplot_hit4cath2cath(request, qset)
 
 

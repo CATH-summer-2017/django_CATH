@@ -198,13 +198,18 @@ DEBUG: This page is: {{request.get_full_path}}
 <!-- {% url 'figure_reverse' request.path as fig_url %} -->
 
 <p>
-<button class="btn btn-primary" type="button" id="view_plot" onclick="plot_window( addParameter('{{fig_url}}','scatter','raw') + '&{{ request.GET.urlencode }}' );">
+{% for button in meta.buttons %}
+  {% include "./urlbutton.html" %}
+{% endfor %}
+
+<!-- <button class="btn btn-primary" type="button" id="view_plot" onclick="plot_window( addParameter('{{fig_url}}','scatter','raw') + '&{{ request.GET.urlencode }}' );">
  Raw Scatter Plot
 </button>
 <button class="btn btn-primary" type="button" id="view_plot" onclick="plot_window( addParameter('{{fig_url}}','scatter','pcnorm') +'&{{ request.GET.urlencode }}' );">
  PC-Normalised Scatter Plot
 </button>
-
+ -->
+ 
 <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#config" aria-expanded="true" aria-controls="config">
   Table Legend
 </button>
