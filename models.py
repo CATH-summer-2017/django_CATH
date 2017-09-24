@@ -4,7 +4,8 @@ from __future__ import unicode_literals
 import datetime
 from django.utils import timezone
 from django.db import models
-from django.db.models import Avg,StdDev,Count
+from django.db.models import Avg,StdDev,Count, Q , F
+# from django.db.models import *
 from django.urls import reverse
 from django.templatetags.static import static
 
@@ -17,6 +18,7 @@ from django.dispatch import receiver
 from CATH_API.lib import *
 import urllib
 from .domutil.util import *
+# from utils_db import *
 
 
 levels=[ None,
@@ -36,6 +38,8 @@ class blankobj(object):
             setattr(self,k,v)
         pass
 
+# domain_model = 
+from django_CATH.models import domain as domain_model
 
 # class tabModel(models.Model):
 #     def __init__(self,**kwargs):
@@ -65,7 +69,7 @@ class homsf_manager(models.Manager):
               )
         # for homsf_qset 
         return homsf_qset
-
+linear = lambda d:  ' '.join( str(x) for x in sum([ [k,v] for k,v in d.iteritems()],[]))
 
 class node_manager(models.Manager):
 
@@ -331,8 +335,14 @@ class seqDB(models.Model):
     version =  models.CharField(default=None,max_length=10);
     def __str__(self):
         return self.name + "_Ver:" + self.version
+    def as_param(self):
+        return linear({
+            'name':self.name,
+            'version':self.version,})
+        # return 'name %s version %s' % (self.name,self.version)
 
 
+import django_CATH.models 
 
 class sequence(models.Model):
     seqDB = models.ForeignKey(seqDB, on_delete= models.CASCADE);
@@ -344,10 +354,12 @@ class sequence(models.Model):
         return  "%s from %s" % (self.acc, str(seqDB) )
     def full_acc(self):
         return "%s.%d" % ( self.acc, self.subversion)
-    def GETcath_node(self):
+    def GETcath_node(self, domain_model = domain_model):
+    # def GETcath_node(self, Dmodel = domain):    	
         try:
-            d = domain.objects.get(self.acc)
-            node = d.classification
+            # d = domain.objects.get(self.acc)
+            d = domain_model.objects.get( domain_id = self.acc)
+            node = d.superfamily()
         except:
             node = None
         return node
@@ -369,6 +381,7 @@ class HSPfrag(models.Model):
 
 
 
+
 class HMMprofile(models.Model):
     # cath_node = models.ForeignKey(classification, default = None, on_delete= models.CASCADE);
     # rep_domain = models.ForeignKey(domain, on_delete = models.CASCADE)
@@ -385,6 +398,7 @@ class HMMprofile(models.Model):
     length = models.IntegerField(default = None)
 
 
+
     text = models.TextField(blank = True, null = True)
     objects = defer_text_manager()
     # def fill_span(self):
@@ -399,6 +413,16 @@ class HMMprofile(models.Model):
     #     return "%d-%d" % (self.start, self.end)
     def __str__(self):
         return "HMM for %s " % self.cath_node
+        # def GETcath_node(self, domain_model = domain_model):
+    def GETcath_node(self, Dmodel = domain):
+        domain_id = p_cathdomain.findall(self.text)[0]
+        try:
+            # d = domain.objects.get(self.acc)
+            d = domain_model.objects.get( domain_id = domain_id)
+            node = d.superfamily()
+        except:
+            node = None
+        return node
 
 
 class hit4hmm2hsp(models.Model):
@@ -422,21 +446,63 @@ class hit4hmm2hsp(models.Model):
     
 
 bfmt = '<b>%s</b>' 
+
+class hit_misc(models.Model):
+    hmm_evalue = models.FloatField(default = None, null = True)
+    hmm_overlap= models.FloatField(default = None, null = True)
+    prc_evalue = models.FloatField(default = None, null = True)
+    prc_overlap= models.FloatField(default = None, null = True)
+    ssap_score = models.FloatField(default = None, null = True)
+    ssap_align = models.IntegerField(default = None, null = True)
+    prc_align  = models.IntegerField(default = None, null = True)
+    prc_seqid  = models.FloatField(default = None, null = True)
+    rmsd  = models.FloatField(default = None, null = True)
+    hit = models.OneToOneField( 'hit4cath2cath', on_delete= models.CASCADE);
+
+def xhit_urled(sf1, sf2, db_source = "Crosshits_v4_1_0",**kwargs):
+    "http://xhits.cathdb.info/crosshits.php?sf2=2.130.10.80&sf1=2.120.10.80&db_source=Crosshits_v4_1_0"
+    baseurl = "http://xhits.cathdb.info/crosshits.php"
+    # url = "http://www.cathdb.info/version/{:s}/domain/{:s}/".format(version, self.domain_id)
+    # url = self.node1.superfamily()
+    pdict = kwargs
+    pdict.update(
+        {'sf1': sf1,
+         'sf2': sf2,
+         'db_source': db_source,
+         }
+    )
+    # if "db_source" not in kwargs.keys():
+    pstr = urllib.urlencode(pdict)
+    url = "%s?%s" % (baseurl,pstr)
+    return a_href( db_source , url )
+
 class hit4cath2cath(models.Model):
     default_cols = ['node1',
-    'node2','xhit_urled',
+    'node2',
+    'node1__domain__domain_id',
+    'node2__domain__domain_id',
+    # 'node1__hmmprofile_set',
+    # 'node1__hmmprofile__GETcath_node',
+    'xhit_urled',
     'local_CCXhit',
     'compare_hitlist',
-    'node1__hit_summary_set__all?__0__hcount',
-    'node2__hit_summary_set__all?__0__hcount',
+    'superpose_cmd',
+    # 'node1__hit_summary_set__all?__0__hcount',
+    # 'node2__hit_summary_set__all?__0__hcount',
+    'node1_hcount',
+    'node2_hcount',
     'hcount_geoavg',
-    'ISS_raw', 'ISS_norm']
+    'ISS_raw', 'ISS_norm',
+    'seqDB']
     
-    node1 = models.ForeignKey( classification, on_delete = models.CASCADE, related_name = 'node1')
-    node2 = models.ForeignKey( classification, on_delete = models.CASCADE, related_name = 'node2')
-    ISS_raw = models.IntegerField( default = None  )
-    ISS_norm = models.FloatField( default = None )
+    node1 = models.ForeignKey( classification, on_delete = models.CASCADE, related_name = 'hit4cath2cath1')
+    node2 = models.ForeignKey( classification, on_delete = models.CASCADE, related_name = 'hit4cath2cath2')
+    ISS_raw = models.IntegerField( default = None, null = True  )
+    ISS_norm = models.FloatField( default = None, null = True)
     seqDB = models.ForeignKey(seqDB, on_delete= models.CASCADE);
+    hcount_geoavg = models.FloatField( default = None, null = True)
+
+
     def __str__(self):
         # return "Node 1: %s,  Node 2: %s,  "
         # basefmt = 
@@ -472,23 +538,20 @@ class hit4cath2cath(models.Model):
             self.node2, 
             )
         return (raw_msg)
-    def xhit_urled(self, db_source = "Crosshits_v4_1_0",**kwargs):
-        "http://xhits.cathdb.info/crosshits.php?sf2=2.130.10.80&sf1=2.120.10.80&db_source=Crosshits_v4_1_0"
-        baseurl = "http://xhits.cathdb.info/crosshits.php"
-        # url = "http://www.cathdb.info/version/{:s}/domain/{:s}/".format(version, self.domain_id)
-        # url = self.node1.superfamily()
-        pdict = kwargs
-        pdict.update(
-            {'sf1': self.node1.superfamily(),
-             'sf2': self.node2.superfamily(),
-             'db_source': db_source,
-             }
+    def superpose_cmd(self):
+        # s = a_href(  , url )
+        text = "superpose_cmd"
+        url  =  "quick_duperpose %s %s" % (
+            self.node1.domain.domain_id,
+            self.node2.domain.domain_id
+            )
+        html = '<button class="btn-primary copy" data-clipboard-text="%s">%s </button>' % (url,text)
+        return html
+    def xhit_urled (self):
+        return xhit_urled(
+        self.node1.superfamily(),
+        self.node2.superfamily(),
         )
-        # if "db_source" not in kwargs.keys():
-        pstr = urllib.urlencode(pdict)
-        url = "%s?%s" % (baseurl,pstr)
-
-        return a_href( db_source , url )
     def local_CCXhit(self):
         param = urllib.urlencode( {
             "node1__id":self.node1.id,
@@ -500,52 +563,19 @@ class hit4cath2cath(models.Model):
         pstr = urllib.urlencode( {
             "node1__id":self.node1.id,
             "node2__id":self.node2.id,
+            "seqDB": self.seqDB.as_param(),
             } )
         # url = reverse('CCXhit_handler',args=[])
         baseurl = reverse("tab__hitlist__pair",args=[])
         url = "%s?%s" % (baseurl,pstr)
 
         return a_href("compare_hitlist", url)        
-
-    def OLD1_compare_hitlist(self):
-
-        #node1 = classification.objects.filter(id = self.node1.id)
-        rv_field = reverse_field[self.node1.level.letter]
-        rv_field = rv_field.replace('__hits','__hit4hmm2hsp__id')
-        hitlist1 = classification.objects.filter(id = self.node1.id).values_list(rv_field,flat = True) 
-
-        rv_field = reverse_field[self.node2.level.letter]
-        rv_field = rv_field.replace('__hits','__hit4hmm2hsp__id')
-        hitlist2 = classification.objects.filter(id = self.node2.id).values_list(rv_field,flat = True) 
-        baseurl = reverse("tab__hitlist__pair",args=[])
-        pstr = urllib.urlencode( {
-            "hitlist1":hitlist1,
-            "hitlist2":hitlist2,
-            } )
-        url = "%s?%s" % (baseurl,pstr)
-        return a_href("compare_hitlist", url)
-        # self
+    def node1_hcount(self):
+        return self.node1.hit_summary_set.get(seqDB = self.seqDB).hcount
+    def node2_hcount(self):
+        return self.node2.hit_summary_set.get(seqDB = self.seqDB).hcount
 
 
-
-
-
-    def OLD_compare_hitlist(self):
-        hmmid1 = self.node1.hmmprofile.id if self.node1.level.letter == 'S' else None
-        hmmid2 = self.node2.hmmprofile.id if self.node2.level.letter == 'S' else None
-        baseurl = reverse("hmm_compare",args=[])
-        pstr = urllib.urlencode( {
-            "hmm1__id":hmmid1,
-            "hmm2__id":hmmid2,
-            } )
-
-        url = "%s?%s" % (baseurl,pstr)
-
-        # rv_field()
-
-        return a_href("compare_hitlist", url)
-
-    hcount_geoavg = models.FloatField( default = None, null = True)
     def update_hcount_geoavg(self):
         qset1 = self.node1.hit_summary_set.filter(seqDB = self.seqDB)
         qset2 = self.node2.hit_summary_set.filter(seqDB = self.seqDB)
@@ -557,8 +587,18 @@ class hit4cath2cath(models.Model):
             gavg = None
         self.hcount_geoavg = gavg
         return gavg
+    def update__ISS_norm(self):
+        # self.update__geoavg()
+        self.ISS_norm = ISS_normalise_new(  0, 0, self.ISS_raw, self.hcount_geoavg)
+
 
         # self.node1.id
+
+# class crosshit(models.Model):
+#     node1 = clas
+
+
+
 # @receiver(models.signals.post_save, sender=hit4cath2cath)
 # def execute_after_save(sender, instance, created, *args, **kwargs):
 #     if created:
@@ -581,15 +621,22 @@ class hit_summary(models.Model):
     node = models.ForeignKey(classification, on_delete=models.CASCADE);
     seqDB = models.ForeignKey(seqDB, on_delete=models.CASCADE);
     hcount = models.IntegerField(default = 0) #### Auto-update in the future
+    # stat = models.FloatField(default = 0) #### Auto-update in the future
+
+# class hit_summaryPR(models.Model):
+#     hit_summary1 = models.ForeignKey(classification, on_delete=models.CASCADE);
+#     node = models.ForeignKey(classification, on_delete=models.CASCADE);
+#     seqDB = models.ForeignKey(seqDB, on_delete=models.CASCADE);
+#     hcount = models.IntegerField(default = 0) #### Auto-update in the future
 
 
-
-
-class hitP_obj(blankobj):
+class hit4hmm2hspPR(models.Model):
     default_cols = [
     # 'id',
     'hit1__target__acc',
     'hit1__target__GETcath_node',
+    'hit1__query__cath_node', 
+    'hit2__query__cath_node', 
     'hit1__start',
     'hit1__end',
     'hit2__end',
@@ -599,6 +646,47 @@ class hitP_obj(blankobj):
 
     'geoavg',
     'overlap',
+    'stat',
+
+    'hit1__target__seqDB',
+    ]
+    # default_cols = ['node1',
+    # 'node2','xhit_urled',
+    # 'local_CCXhit',
+    # 'compare_hitlist',
+    # 'node1__hit_summary_set__all?__0__hcount',
+    # 'node2__hit_summary_set__all?__0__hcount',
+    # 'hcount_geoavg',
+    # 'ISS_raw', 'ISS_norm']
+    hit1 = models.ForeignKey(hit4hmm2hsp, on_delete = models.CASCADE, related_name = 'pair1')
+    hit2 = models.ForeignKey(hit4hmm2hsp, on_delete = models.CASCADE, related_name = 'pair2')
+    geoavg = models.FloatField(default = None )
+    overlap = models.IntegerField(default = None)
+    masked = models.BooleanField(default = False)
+    # ISS_raw = models.IntegerField( default = None  )
+    # ISS_norm = models.FloatField( default = None )
+    # seqDB = models.ForeignKey(seqDB, on_delete= models.CASCADE);
+    def __str__(self):
+        return '%s: %2.1f  %2.1f' % (self.hit1.target.acc, self.hit1.bitscore, self.hit2.bitscore)
+
+
+class hitP_obj(blankobj):
+    default_cols = [
+    # 'id',
+    'hit1__target__acc',
+    'hit1__target__GETcath_node',
+    'hit1__query__cath_node', 
+    'hit2__query__cath_node', 
+    'hit1__start',
+    'hit1__end',
+    'hit2__end',
+    'hit2__start',
+    'hit1__bitscore',
+    'hit2__bitscore',
+
+    'geoavg',
+    'overlap',
+    'stat',
     ]
     def __init__(self,**kwargs):
         return blankobj.__init__(self, **kwargs)
@@ -614,39 +702,108 @@ class hitP_obj(blankobj):
                 (self.hit2.end + 1 - self.hit2.start) * 
                 (self.hit1.end + 1 - self.hit1.start) 
                 ) **0.5
+    def as_MySQL(self):
+        jdict = {
+        'hit1_id':self.hit1.id,
+        'hit2_id':self.hit2.id,
+        'geoavg' :self.geoavg ,
+        'overlap':self.overlap,
+        }
+        return hit4hmm2hspPR()
         # self
         # self.geoavg = 
 
 
 
-def hitlist_compare(node1__id = 309754, node2__id = 310524, sDB = None, **kwargs):
+class PR_obj(blankobj):
+    default_cols=[
+        'node1',
+        'node2',
+        'val1',
+        'val2',
+        'seqDB1',
+        'seqDB2',
+        'xhit_url',]
+    def __init__(self,**kwargs):
+        return blankobj.__init__(self,**kwargs)
+    def xhit_url (self):
+        return xhit_urled(
+        self.node1.superfamily(),
+        self.node2.superfamily(),
+        )
+    def seqDB1(self):
+        sDB = self.sDBs[1 - 1]
+        url = url__expand_HXits(self.node1.id,
+            self.node2.id,
+            sDB,
+            )
+        return a_href(sDB,url)
+    def seqDB2(self):
+        sDB = self.sDBs[2 - 1]
+        url = url__expand_HXits(self.node1.id,
+            self.node2.id,
+            sDB,
+            )
+        return a_href(sDB,url)
+
+def url__expand_HXits( node1__id, node2__id, sDB):
+    param = urllib.urlencode( 
+        {
+        'filter':linear({
+                "node1__parent__id":node1__id,
+                "node2__parent__id":node2__id,
+                }),
+        'seqDB': sDB.as_param(),}
+        )
+    baseurl = reverse('CCXhit_handler',args=[])
+    url = "%s?%s" % (baseurl , param)
+    return url
+    # return a_href("local_page", "%s?%s" % (url , param) )
+
+# class parent_obj(blankobj):
+    
+
+
+def OLD_hitlist_compare(node1__id = 309754, node2__id = 310524, sDB = None, cache = None, **kwargs):
+
+
     sDB_id = sDB.id
-
-    qset1 = classification.objects.filter(id = node1__id)
-    qset2 = classification.objects.filter(id = node2__id)
-
-    node1 = qset1[0]
-    node2 = qset2[0]
-
-
-    rv_field = reverse_field[ node1.level.letter ]
-    sDB_field  = rv_field + "__seqDB"
-    text_field = rv_field.replace('__hits','__text')
-    rvid_field = rv_field.replace('__hits','__hit4hmm2hsp__id')
-
-    fs = [rv_field, rvid_field, sDB_field]
-    hitlist1 = qset1.values_list(*fs).distinct() 
-
     
-    rv_field = reverse_field[ node2.level.letter ]
-    sDB_field  = rv_field + "__seqDB"
-    text_field = rv_field.replace('__hits','__text')
-    rvid_field = rv_field.replace('__hits','__hit4hmm2hsp__id')
-    
-    fs = [rv_field, rvid_field, sDB_field]
-    hitlist2 = qset2.values_list(*fs).distinct() 
+    if cache:
+        hitlist1 = d[node1__id]
+        hitlist2 = d[node2__id]        
+    else:
+
+        qset1 = classification.objects.filter(id = node1__id)
+        qset2 = classification.objects.filter(id = node2__id)
+
+        node1 = qset1[0]
+        node2 = qset2[0]
 
 
+        rv_field = reverse_field[ node1.level.letter ]
+        sDB_field  = rv_field + "__seqDB"
+        text_field = rv_field.replace('__hits','__text')
+        rvid_field = rv_field.replace('__hits','__hit4hmm2hsp__id')
+
+        fs = [rv_field, rvid_field, sDB_field]
+        hitlist1 = qset1.values_list(*fs).distinct() 
+
+
+        rv_field = reverse_field[ node2.level.letter ]
+        sDB_field  = rv_field + "__seqDB"
+        text_field = rv_field.replace('__hits','__text')
+        rvid_field = rv_field.replace('__hits','__hit4hmm2hsp__id')
+
+        fs = [rv_field, rvid_field, sDB_field]
+    #     hitlist2 = qset2.values_list(*fs).distinct() 
+        hitlist2 = qset2.values_list(*fs)
+
+    #     hitlist2 = list(hitlist2)
+
+
+    #     hitlist1 = [e[1:] for e in hitlist1]
+    #     hitlist2 = [e[1:] for e in hitlist2]
 
     
     hits1_ids = {seqid:hitid for seqid,hitid,sid in hitlist1 if sid == sDB_id}
@@ -687,33 +844,68 @@ def hitlist_compare(node1__id = 309754, node2__id = 310524, sDB = None, **kwargs
 
     return qset
 
+class fake__query_set(list):
+    def __init__(self, *args):
+        # self.data  =  data
+        list.__init__(self, *args)
+
+    def __getitem__(self, key):
+        return list.__getitem__(self, key)
+        # list.__init__(data)
+    # def __iter__(self):
+    #   return (x for x in self.data)
+    # def __len__(self):
+    #   return len(self.data)
+
+    def values_list(self, *args):
+        # its = []
+        its = [ [getattribute_iter( q, attr) for q in self ] for attr in args]
+        return izip(*its)
+
+    def filter(self):
+        raise Exception("Yet to be implemented ")
+
+    def order_by(self, *args, **kwargs):
+        return self
 
 
-# class Publisher(models.Model):
-#     name = models.CharField(max_length=30)
-#     address = models.CharField(max_length=50)
-#     city = models.CharField(max_length=60)
-#     state_province = models.CharField(max_length=30)
-#     country = models.CharField(max_length=50)
-#     website = models.URLField()
+def hitlist_compare(node1__id = 309754, node2__id = 310524, sDB = None, cache = None, **kwargs):
+    # hitPR_list1 = 
+    qset1 = classification.objects.filter(id = node1__id)
+    qset2 = classification.objects.filter(id = node2__id)
+    node1 = qset1[0]
+    node2 = qset2[0]
+    rv_field = reverse_field[ node1.level.letter ]
+    sDB_field  = rv_field + "__seqDB"
+    # text_field = rv_field.replace('__hits','__text')
+    rvPR1_field = rv_field.replace('__hits','__hit4hmm2hsp__pair1__id')
+    rvPR2_field = rv_field.replace('__hits','__hit4hmm2hsp__pair2__id')
+    # fs = [rv_field, rvid_field1, sDB_field]
+    # hitlist1 = list(qset1.values_list(*fs).distinct())
+    # fs = [rv_field, rvid_field2, sDB_field]
+    # hitlist1 += list(qset1.values_list(*fs).distinct())
 
-#     class Meta:
-#         ordering = ["-name"]
+    # fs = [rv_field, rvid_field1, sDB_field]
+    # hitlist2 = list(qset2.values_list(*fs).distinct())
+    # fs = [rv_field, rvid_field2, sDB_field]
+    # hitlist2 += list(qset2.values_list(*fs).distinct())
+    set1 = set(list(qset1.values_list(rvPR1_field,sDB_field) ) + list( qset1.values_list(rvPR2_field,sDB_field)) )
+    set2 = set(list(qset2.values_list(rvPR1_field,sDB_field) ) + list( qset2.values_list(rvPR2_field,sDB_field)) )
+    qset = set1 & set2
+    # qset = [x for x in qset if x[-1]==sDB.id]
+    ids = [x[0] for x in qset if x[-1]==sDB.id]
+                                                            
+#     qset = (
+#         (set(qset1.values_list(rvPR1_field).filter(**{sDB_field:sDB.id})) | set(qset1.values_list(rvPR2_field).filter(**{sDB_field:sDB.id}))) & 
+#         (set(qset2.values_list(rvPR1_field).filter(**{sDB_field:sDB.id})) | set(qset2.values_list(rvPR2_field).filter(**{sDB_field:sDB.id})))
+#             )
+    # ids  = [x[0] for x in qset]
+    qset = hit4hmm2hspPR.objects.filter(id__in = ids)
+    qset = qset.annotate( stat = models.ExpressionWrapper( F('overlap')/F('geoavg'),output_field =models.FloatField() ) )
 
-#     def __str__(self):              # __unicode__ on Python 2
-#         return self.name
+    # qset = hit4hmm2hspPR.objects.in_bulk( ids ).values()
+    # for q in qset:
+    #     q.stat = q.overlap / q.geoavg
+    # qset = fake__query_set(qset)
 
-# class Author(models.Model):
-#     salutation = models.CharField(max_length=10)
-#     name = models.CharField(max_length=200)
-#     email = models.EmailField()
-#     headshot = models.ImageField(upload_to='author_headshots')
-
-#     def __str__(self):              # __unicode__ on Python 2
-#         return self.name
-
-# class Book(models.Model):
-#     title = models.CharField(max_length=100)
-#     authors = models.ManyToManyField('Author')
-#     publisher = models.ForeignKey(Publisher, on_delete=models.CASCADE)
-#     publication_date = models.DateField()
+    return qset

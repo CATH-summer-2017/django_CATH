@@ -24,3 +24,23 @@
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
 
 
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.7.1/clipboard.min.js"></script>
+
+
+<script type="text/javascript">
+$( document ).ready(function() {
+var clipboard = new Clipboard('.copy');
+// var clipboard = new Clipboard(btns);
+clipboard.on('success', function(e) {
+    console.log(e);
+});
+clipboard.on('error', function(e) {
+    console.log(e);
+});
+
+});
+// console.log(clipboard)
+
+</script>

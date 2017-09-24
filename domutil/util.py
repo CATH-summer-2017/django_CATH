@@ -39,15 +39,24 @@ import cPickle as pk
 def pk_load(fname, cache_dir = 'data/'):
     fname = cache_dir + fname
     return pk.load(open(fname, 'rb'))
-def pk_dump(v, alias, cache_dir = 'data/'):
-    vname,var = v
-    # vname = get_vname( var )
-    cdir = cache_dir + vname + '/'
+    
+# def pk_dump(v, alias, cache_dir = 'data/'):
+#     vname,var = v
+#     # vname = get_vname( var )
+#     cdir = cache_dir + vname + '/'
+#     if not os.path.isdir(cdir):
+#         os.makedirs(cdir)
+
+#     fname = cache_dir + vname + '/' + alias
+#     pk.dump( var, open(fname,'wb'))
+
+def pk_dump(var, fname, cache_dir = 'data/'):
+    fname = cache_dir + fname
+    cdir = os.path.dirname(fname)
     if not os.path.isdir(cdir):
         os.makedirs(cdir)
-
-    fname = cache_dir + vname + '/' + alias
     pk.dump( var, open(fname,'wb'))
+
 levels=[ None,
 'root',
 'Class',
@@ -558,7 +567,8 @@ def batch_qs(qs, batch_size=1000):
             for article in qs:
                 print article.body
     """
-    total = qs.count()
+    total = sum( 1 for _ in qs)
+
     for start in range(0, total, batch_size):
         end = min(start + batch_size, total)
         # yield (start, end, total, qs[start:end])
@@ -579,13 +589,17 @@ def ISS_normalise(hc1, hc2, hcboth):
     norm = (log1 + log2) / 2 - log3 
     return norm
 
-def ISS_normalise_new(hc1, hc2, hcboth):
+def ISS_normalise_new(hc1, hc2, hcboth, geoavg = None):
     # if len(hc1) != 1 or isinstance(hc1,np.array):
     # else:
-    log1 =  np.log10( hc1 + 1) 
-    log2 =  np.log10( hc2 + 1) 
     log3 =  np.log10( hcboth + 1) 
-    norm = 2 * log3 / (log1 + log2)  
+    if geoavg:
+        log4 = np.log10( geoavg + 1)
+        norm = log3 / log4
+    else:
+        log1 =  np.log10( hc1 + 1) 
+        log2 =  np.log10( hc2 + 1) 
+        norm = 2 * log3 / (log1 + log2)  
     return norm
 
 
@@ -735,3 +749,58 @@ def assert_expr(act, expr = '', behave = None, **kwargs):
     success = eval(fullexpr,locals(),kwargs)
     assert( success ),"[FAILED]:" + basemsg
     print "[PASSED]:" + basemsg
+    
+import itertools
+def sortANDgroup(lst,key = None):
+    lst = sorted(lst,key = keyF)
+    return itertools.groupby(lst,key = keyF)
+
+
+
+import collections
+from scipy.sparse import *
+def concat_dok( Ds, func = sum, args = [],):
+    from scipy.sparse import dok_matrix
+    if func == max:
+        args = []
+    elif func == sum:
+        args = [()]
+    
+    same = 1
+    s0 = Ds[0].shape
+    keys = set()
+    for D in Ds:        
+        same *= D.shape == s0
+        assert same,'size checking failed'
+        keys = keys | set(D.keys())
+    
+        
+    OUTPUT = dok_matrix( Ds[0].shape )
+    it = keys
+
+    d = dict()
+    c = counter([],INF = 1,per = 10000)
+    for k in it:
+#         v = sum( (D.get(k,(0,)) for D in Ds),() )
+        v = func( (D.get(k,(0,)) for D in Ds), *args )
+        c.count()
+#         v1 = D_curr[x,y]
+        d[k] = v
+    OUTPUT.update(d)
+    c.summary("concatenating sparse matrix")
+    return OUTPUT
+
+def matrify( lst, flat = False, l = None):
+    if not l:
+        l = max(itertools.izip(*lst))
+        if isinstance(l,tuple):
+            l = l[0]
+#     l = self.l
+    OUTPUT = dok_matrix( (l + 1, l + 1), dtype = 'int')
+    it = (tuple(x) for x in lst)
+    count = collections.Counter(it)
+    if not flat:
+        for k,v in count.iteritems():
+            count[k] = (v,)
+    OUTPUT.update(count)
+    return OUTPUT

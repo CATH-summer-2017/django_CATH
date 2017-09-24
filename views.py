@@ -165,7 +165,7 @@ greets = {
 		%s
 		'''%greet_plothowto],
 
-	"scatterplot_hit4cath2cath":[
+	"scatterplot__hit4cath2cath":[
 	'Normalised scatterplot <br/>You are looking at a collcetion of domain structures',
 
 	'''This is a scatter plot showing the distribution of packedness and relative structure size across all superfamilies in CATH, using PCAed and normalised metrics. Each point represent a domain structure. 
@@ -324,7 +324,7 @@ reverse_field = {
 	'C':'classification__classification__classification__classification__hmmprofile__hits'
 }
 
-def tab__CCXhit__S35(request,qset,**kwargs):
+def tab__CCXhit__S35(request, qset, **kwargs):
 	cols = ['node1',
 	# 'node1__id','node2__id',
 	'node2','xhit_urled',
@@ -337,11 +337,20 @@ def tab__CCXhit__S35(request,qset,**kwargs):
 	   'ISS_raw', 'ISS_norm']
 	title = 'ISS_test'
 	# orders = []
+	figurl = '/tst/figure' + request.get_full_path()
+	button1 = blankobj( 
+		url = figurl,
+		text = '''[scatter]<br/>
+		x: ISS_raw<br/>
+		y: average hit ''',
+		)
+
 	response = view_qset(
 		request,
 		qset, 
 		cols = cols,
 		title = title,
+		buttons = [button1],
 		**kwargs
 		)
 	return response 
@@ -352,26 +361,34 @@ def cross_qset(node1__id,node2__id):
 	node2 = classification.objects.get(id = node2__id)
 	s35_1 = node1.classification_set.all()
 	s35_2 = node2.classification_set.all()
-	hits_id1A = set(s35_1.values_list("node1",flat = True) )
-	hits_id1B = set(s35_1.values_list("node2",flat = True) )
-	hits_id2A = set(s35_2.values_list("node1",flat = True) )
-	hits_id2B = set(s35_2.values_list("node2",flat = True) )
+	hits_id1A = set(s35_1.values_list("hit4cath2cath1",flat = True) )
+	hits_id1B = set(s35_1.values_list("hit4cath2cath2",flat = True) )
+	hits_id2A = set(s35_2.values_list("hit4cath2cath1",flat = True) )
+	hits_id2B = set(s35_2.values_list("hit4cath2cath2",flat = True) )
 
 	hits_ids = ( hits_id1A | hits_id1B)  &  ( hits_id2A | hits_id2B)
-	qset =  CCXhit.filter(id__in=hits_ids)
+	# qset =  CCXhit.filter(id__in=hits_ids)
+	qset =  CCXhit.in_bulk(hits_ids)
+
 	# raise Exception("here")
 
 	return qset
 
-
-def test__CCXhit(request):
-	# filters = request.GET.get('filters', {"ISS_norm__lte":0.9})
+##### DEPRECATED #######
+##### DEPRECATED #######
+##### DEPRECATED #######
+##### DEPRECATED #######
+def init__CCXhit__qset(request):
 
 	filters = request.GET or {"ISS_norm__lte":0.9}
+	sDB_dict = read__seqDB(request)
+	sDB = seqDB.objects.get(**sDB_dict)
+	filters.update({'seqDB':sDB.id})
 	# raise Exception("here")
 	kwargs = {}
 
-	if 'node1__id' in filters.keys():
+	# if 'node1__id' in filters.keys():
+	if 0:
 		node1__id =  filters["node1__id"]
 		node2__id =  filters["node2__id"]
 		node_ids = sorted(
@@ -398,23 +415,19 @@ def test__CCXhit(request):
 		<br/>ISS_raw:%s
 		<br/>ISS_norm%s''' % (node1,node2, hit.ISS_raw, hit.ISS_norm)
 	else:
-		qset = CCXhit.filter(**filters) 
+		qset = iter_filter(CCXhit,**filters)
+	return qset	# qset = CCXhit.filter(**filters) 
 
 
-	# hit4cath2cath.objects.values_list('node1__id'.'node2__id')
-	# qset = hit4cath2cath.objects.exclude(node1__parent=F("node2__parent") ) 
-	# qset = CCXhit.exclude(ISS_norm__gte=0.9) 
-
-	# qset = CCXhit.filter(ISS_norm__lte=0.9) 
-
-	qset = qset.order_by('-ISS_norm')
-	qset = qset[:500]
+def test__CCXhit(request):
+	# filters = request.GET.get('filters', {"ISS_norm__lte":0.9})
+	qset = init__CCXhit__qset(request)
 	# .prefetch_related(["node1__hmmprofile","node2__hmmprofile"])
 	# qset = qset.annotate(
 	# 	# node1_hitCount = Count("node1__hmmprofile__hits"), 
 	# 	# node2_hitCount = Count("node2__hmmprofile__hits"),
 	# 		)
-	return tab__CCXhit__S35(request,qset, **kwargs)
+	return tab__CCXhit__S35(request,qset,)
 
 def test__hmm_compare(request,hmm1__id = None,hmm2__id = None, sDB = None):
 	# params = request.GET or {"hmm1__id":17150,"hmm2__id":4067}
@@ -459,55 +472,75 @@ class fake__query_set(list):
 
 
 
-class fake__query_set(list):
-	def __init__(self, *args):
-		# self.data  =  data
-		list.__init__(self, *args)
 
-	def __getitem__(self, key):
-		return list.__getitem__(self, key)
-		# list.__init__(data)
-	# def __iter__(self):
-	# 	return (x for x in self.data)
-	# def __len__(self):
-	# 	return len(self.data)
+################DPERECATED#####
+def read__seqDB(request, default = "name CATH-S40-nr version 4_1_0"):
+	sDB_dict  = dict(
+					zip(
+						["name","version"], request.GET.get("seqDB", default).split("__") 
+						) 
+					)
+	return sDB_dict
 
-   	def values_list(self, *args):
-		# its = []
-		its = [ [getattribute_iter( q, attr) for q in self ] for attr in args]
-		return izip(*its)
+def read__filter(request,default = None):
+	filter_str= request.GET.get("filter", default )
+	if filter_str:
+		filter_list = filter_str.split()
+		Dcrit = dict(zip( filter_list[::2], filter_list[1::2]) )
+	else:
+		Dcrit = {}
+	return Dcrit
+	
+###### IN USE #########
+def param2dict(request, key, default = None):
+	param_str= request.GET.get(key, default )
+	if param_str:
+		param_list = param_str.split()
+		d = dict(zip( param_list[::2], param_list[1::2]) )
+	else:
+		d = {}
+	return d
 
-	def filter(self):
-		raise Exception("Yet to be implemented ")
-
-	def order_by(self, *args, **kwargs):
-		return self
-
-# class 
-
+def read__seqDB(request, **kwargs):
+	kwargs['default'] = kwargs.get('default', "name CATH-S40-nr version 4_1_0")
+	d = param2dict(request, 'seqDB',**kwargs)
+	return d
+def read__filter(request, **kwargs):
+	d = param2dict(request, 'filter', **kwargs)
+	return d
 def hitlistPR__param2qset(request):
 	node1__id = request.GET.get("node1__id",'309754')
 	node2__id = request.GET.get("node2__id",'310524')
-	sDB_dict  = dict(
-					zip(
-						["name","version"], request.GET.get("seqDB",'CATH__v4_1_0').split("__") 
-						) 
-					)
-	try:
-		sDB = seqDB.objects.get(**sDB_dict)
-	except Exception as e:
-		msg = "you specifed seqDB with:%s <br/> But exception is raised: '%s' <br/> try append '/?seqDB=CATH__v4_1_0' to your url" % (sDB_dict, e)
-		return HttpResponse(msg)
+	
+	crit = {
+	"stat__gte":0.4,
+	"masked__isnull":0,
+	}
+	crit.update(read__filter(request))
+	
+	sDB_dict  = read__seqDB(request)
+	sDB = seqDB.objects.get(**sDB_dict)
+	# try:
+	# 	sDB = seqDB.objects.get(**sDB_dict)
+	# except Exception as e:
+	# 	msg = "you specifed seqDB with:%s <br/> But exception is raised: '%s' <br/> try append '/?seqDB=CATH__v4_1_0' to your url" % (sDB_dict, e)
+	# 	return HttpResponse(msg)
 
 	qset = hitlist_compare(
 		node1__id,
 		node2__id, 
 		sDB )
+	qset = qset.filter(**crit)
+
 	node__ids = sorted([node1__id,node2__id])
 	try:
 		parent = hit4cath2cath.objects.get(node1 = node__ids[0], node2 = node__ids[1], seqDB = sDB)
-	except:
-		parent = None
+		parent.ISS_raw = qset.count()
+		parent.update__ISS_norm()
+	except Exception as e:
+		# parent = None
+		parent = e
+
 	return qset,parent
 	# return ( [ qset, parent])
 def tab__hitlist__pair(request, ):
@@ -579,15 +612,71 @@ def tab__hitlist__pair(request, ):
 # dict_hit2tid = dict(hit4hmm2hsp.objects.values_list('id','target__id'))
 
 # def hitlist_compare(request, node1__id = None, node2__id = None, sDB = None, **kwargs):
-def init__CCXhit_homsf():
-	letter = 'H'
-	rv_field = reverse_field[letter]
-	qset = CCXhit.filter(node1__level__letter='H') 
-	qset = qset.order_by('-ISS_norm')
-	qset = qset.exclude(ISS_norm__gte=0.7).exclude(ISS_raw__lte=10)
+def init__CCXhit_homsf(request = None):
+	# letter = 'H'
+	# rv_field = reverse_field[letter]
+	crit = {
+	# 'node1__level__letter':'H',
+	'ISS_norm__lte':0.7,
+	'ISS_raw__gte':10,
+	}
+	limit = 1000
+	order = ['-ISS_norm']
 
-	qset = qset[:1000]
+	if request:
+		sDB_dict  = read__seqDB(request)
+		sDB = seqDB.objects.get(**sDB_dict)
+		qset = filter__Xhit(sDB.hit4cath2cath_set)
+		# qset = CCXhit.filter({'seqDB':sDB.id})
+		# crit.update({'seqDB':sDB.id})
+		crit.update(read__filter(request))
+
+	# qset = CCXhit.filter(node1__level__letter='H') 
+	# qset = CCXhit.filter(**crit)
+	# qset = qset.order_by('-ISS_norm')
+	# qset = qset.exclude(ISS_norm__gte=0.7).exclude(ISS_raw__lte=10)
+	# qset = qset[:1000]
+	for k,v in crit.items():
+		qset = qset.filter(**{k:v})
+	qset = qset.order_by(*order)
+	qset = qset[ : limit ]
+
 	return qset
+
+def filter__Xhit(qset):
+	return qset 
+	# return qset.exclude(Q(node1__parent=F("node2__parent")) & Q(node1__level__letter='S')) 
+
+
+
+def init__CCXhit__qset(request = None):
+	# letter = 'H'
+	# rv_field = reverse_field[letter]
+	# crit = {'node1__level__letter':'H'}
+	crit = {
+	'ISS_norm__gte':0.5,
+	'ISS_raw__gte':10,
+	}
+	limit = 500
+	# order = ['-ISS_norm']
+	order = []
+	if request:
+		sDB_dict  = read__seqDB(request)
+		sDB = seqDB.objects.get(**sDB_dict)
+		qset = filter__Xhit( sDB.hit4cath2cath_set )
+		# crit.update({'seqDB':sDB.id})
+		crit.update(read__filter(request))
+
+		# qset = CCXhit.filter(node1__level__letter='H') 
+
+	for k,v in crit.items():
+		qset = qset.filter(**{k:v})
+	# qset = CCXhit.filter(**crit)
+	qset = qset.order_by(*order)
+	qset = qset[ : limit ]
+
+	return qset
+
 
 def test__CCXhit_homsf(request):
 	# hit4cath2cath.objects.values_list('node1__id'.'node2__id')
@@ -598,22 +687,24 @@ def test__CCXhit_homsf(request):
 	# 	# node1_hitCount = Count("node1__hmmprofile__hits"), 
 	# 	# node2_hitCount = Count("node2__hmmprofile__hits"),
 	# 		)
-	qset = init__CCXhit_homsf()
+	qset = init__CCXhit_homsf(request)
 
-	cols = ['node1',
-	# 'node1__id','node2__id',
-	'node2','xhit_urled',
-	'local_CCXhit',
-	'compare_hitlist',
-	'node1__hit_summary_set__all?__0__hcount',
-	'node2__hit_summary_set__all?__0__hcount',
-	'hcount_geoavg',
-	# 'node2__hit_summary__hcount', 
+	# cols = ['node1',
+	# # 'node1__id','node2__id',
+	# 'node2','xhit_urled',
+	# 'local_CCXhit',
+	# 'compare_hitlist',
+	# 'node1__hit_summary_set__all?__0__hcount',
+	# 'node2__hit_summary_set__all?__0__hcount',
+	# 'hcount_geoavg',
+	# # 'node2__hit_summary__hcount', 
 
-	  # 'node1__%s__count' % rv_field,
-	  # 'node2__%s__count' % rv_field,
+	#   # 'node1__%s__count' % rv_field,
+	#   # 'node2__%s__count' % rv_field,
 
-	   'ISS_raw', 'ISS_norm']
+	#    'ISS_raw', 'ISS_norm']
+	cols = None
+
 	title = 'ISS_test'
 	# orders = []
 
@@ -766,10 +857,71 @@ def domain_collection(request, homsf_id = None,
 		parent = parent,
 		buttons = buttons,
 							)
+from utils_db import *
+# def test__contrast__crosshit(request):
 
+def	init__contrast__crosshit(request):
+	sDB1 = seqDB.objects.get(name='CATH-S40-nr')
+	sDB2 = seqDB.objects.get(name='crosshit')
+	qset = contrast__crosshit(sDB1,sDB2)
+	return qset
+def tab__contrast__crosshit(request,):
+	qset = init__contrast__crosshit(request)
 
+	figurl = '/tst/figure' + request.get_full_path()
+	button1 = blankobj( 
+		url = figurl,
+		text = '''[scatter]<br/>
+		x: val1<br/>
+		y: val2 ''',
+		)
+	return view_qset(
+		request,
+		qset,
+		buttons = [button1],
+		cols = qset[0].default_cols,
+		)
 
+def scatterplot__contrast__crosshit(request):
+	qset = init__contrast__crosshit(request)
+	fields  = [
+		# 'domain__domain_stat__res_count',
+		'val1',
+		'val2',
+		'id',
+		# 'superfamily',
+		]
 
+	kwargs = 	{
+	'title': 'contrast Xhits' ,
+	# 'greet': greets["scatterplot__hit4cath2cath"],
+	'greet': 'NOTHING yet',
+	# 'You are looking at a collection of %s'%qset[0].level.name,	
+	'subplot_kwargs':{
+		'logx': True,
+		'logy': True,
+		# 'xlim':[-.2,7.],
+		# 'ylim':[-.2,6.],
+		'xoffset': 1,
+		'yoffset': 1,
+
+		# 'xlabel': field_short[fields[0]],
+		# 'ylabel': field_short[fields[1]],
+
+		'regress': True,
+		},
+	'labels': [str(q) for q in qset],
+	}
+
+	return scatterplot_qset(
+		request,
+		qset,
+		fields = fields,
+		# title = 'superfamily %s' % homsf_id,
+		**kwargs
+		)
+
+	# qset = 
 ############## Use class-based view to replace "scatterplot_qset" in the future #############################
 # class scatterplot__view(TemplateView):
 # 	template_name = ""
@@ -781,17 +933,11 @@ def domain_collection(request, homsf_id = None,
 
 
 def scatterplot_qset( request, qset = None, title = None, fields = None, greet = None, crit = [], **kwargs):
-	# title = 
-	# title = 'No_title' if 'title' not in kwargs else title
-	# greet = 'No greeting was provided' if not 'greet' in kwargs else greet
-	# print title
-	# print '\n'
-	# jdict = scatterplot_homsf_dict(qset,fields = fields, **kwargs)
-	# print kwargs.get('greet')
-	# print(subplot_kwargs,'\n\n')
+
 
 
 	fields_t = request.GET.get('FigFields','+'.join(fields))
+	print fields
 	# filter = request.GET.get('FigFilter','+'.join(filter)).split('+')
 	# print(fields_t)
 	# print(kwargs.has_key('subplot_kwargs'))
@@ -941,7 +1087,7 @@ def scatterplot_homsf(request,
 
 
 
-def scatterplot_hit4cath2cath(request, 
+def scatterplot__hit4cath2cath(request, 
 	qset = None,
 	# crit = {'s35_count__gt':10,}	
 	):
@@ -956,14 +1102,13 @@ def scatterplot_hit4cath2cath(request,
 
 	kwargs = 	{
 	'title': 'hit4cath2cath' ,
-	'greet': greets["scatterplot_hit4cath2cath"],
+	'greet': greets["scatterplot__hit4cath2cath"],
 	# 'You are looking at a collection of %s'%qset[0].level.name,	
 	'subplot_kwargs':{
 		'logx': True,
 		'logy': True,
-		# 'xlim':[0,500],
-		# 'xlim':[0,500E1],
-		# 'ylim':[0,800E3],
+		'xlim':[-.2,7.],
+		'ylim':[-.2,6.],
 		'xoffset': 1,
 		'yoffset': 1,
 
@@ -1006,7 +1151,7 @@ def scatterplot__hitlistPR(request,
 
 	kwargs = 	{
 	'title': 'hit4cath2cath' ,
-	'greet': greets["scatterplot_hit4cath2cath"],
+	'greet': greets["scatterplot__hit4cath2cath"],
 	# 'You are looking at a collection of %s'%qset[0].level.name,	
 	'subplot_kwargs':{
 		'logx': False,
@@ -1036,28 +1181,35 @@ def test__scatterplot__hitlistPR(request,
 	qset = None,
 	# crit = {'s35_count__gt':10,}	
 	):
-	sDB_dict = {
-	'name':'CATH',
-	'version':'v4_1_0',
-	}
+	# sDB_dict = {
+	# 'name':'CATH',
+	# 'version':'v4_1_0',
+	# }
+	sDB_dict = read__seqDB(request)
 	sDB = seqDB.objects.get(**sDB_dict)
 	qset = hitlist_compare(sDB = sDB)
 	return scatterplot__hitlistPR(request,qset)
 
-def test__scatterplot_hit4cath2cath(request, 
+def test__scatterplot__hit4cath2cath(request, 
 	# crit = {'s35_count__gt':10,}	
 	):
 
-	# letter = 'H'
-	# rv_field = reverse_field[letter]
-	# qset = CCXhit.filter(node1__level__letter='H') 
-	# qset = qset.order_by('-ISS_norm')
-	# qset = qset.exclude(ISS_norm__gte=0.7)
-	# qset = qset[:1000]
-	qset = init__CCXhit_homsf()
+	qset = init__CCXhit_homsf(request)
 
-	return scatterplot_hit4cath2cath(request, qset)
+	return scatterplot__hit4cath2cath(request, qset)
+def test__scatterplot__CCXhit_homsf(request, 
+	# crit = {'s35_count__gt':10,}	
+	):
+	qset = init__CCXhit_homsf(request)
 
+	return scatterplot__hit4cath2cath(request, qset)
+
+def test__scatterplot__CCXhit(request, 
+	# crit = {'s35_count__gt':10,}	
+	):
+	qset = init__CCXhit__qset(request)
+
+	return scatterplot__hit4cath2cath(request, qset)
 
 
 

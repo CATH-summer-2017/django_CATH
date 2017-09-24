@@ -164,9 +164,13 @@ class RectPlugin(mpld3.plugins.PluginBase):
                       }
 
 
-def scatterplot_dict(xs,y2s,ids, colors = None,lbls=None, forced_lbls=None, regress = True, show = False,
+def scatterplot_dict(xs, y2s, ids=None, colors = None,lbls=None, forced_lbls=None, regress = True, show = False,
   logx = False, logy = False, xoffset = 0, yoffset = 0,
   **kwargs):   
+    # if not kwargs:
+    #   kwargs = {}
+    # if not ids:
+      # ids = range(len(xs))
     if not lbls:
         lbls = ids
     # if forced_lbls:

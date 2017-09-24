@@ -1,4 +1,8 @@
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.7.1/clipboard.min.js"></script>
+
+
+
 
 {# <script src="/static/js/3Dmol-min.js" crossorigin="anonymous"></script> #}
 
@@ -62,6 +66,17 @@ function addslashes(string) {
 
 
 <script type="text/javascript">
+var clipboard = Clipboard('.copy');
+// var clipboard = new Clipboard(btns);
+clipboard.on('success', function(e) {
+    console.log(e);
+});
+clipboard.on('error', function(e) {
+    console.log(e);
+});
+console.log(clipboard)
+    // new Clipboard('.btn');
+
 //   function highlight(j_alias){
 //   $(j_alias).addClass('bg-info').siblings().removeClass('bg-info');
 //   // $('body').

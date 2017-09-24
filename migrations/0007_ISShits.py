@@ -17,8 +17,8 @@ class Migration(migrations.Migration):
             name='hit4cath2cath',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('ISS_raw', models.IntegerField(default=None)),
-                ('ISS_norm', models.FloatField(default=None)),
+                ('ISS_raw', models.IntegerField(default=None, null = True)),
+                ('ISS_norm', models.FloatField(default=None, null = True )),
                 ('node1', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='node1', to='tst.classification')),
                 ('node2', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='node2', to='tst.classification')),
                 ('seqDB', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='tst.seqDB')),

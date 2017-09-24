@@ -1,6 +1,7 @@
 from django.conf.urls import url,include
 
 from . import views
+from django.views.generic import TemplateView
 
 urlpatterns = [
 
@@ -16,9 +17,18 @@ urlpatterns = [
     url(r'^test/CCXhit$', views.test__CCXhit, name='test'),
     url(r'^test/CCXhit_homsf$', views.test__CCXhit_homsf, name='test'),
     url(r'^test/hmm_compare$', views.test__hmm_compare, name='test'),
+    url(r'^test/ConXhit$', views.tab__contrast__crosshit),
 
+    # url(r'^figure(?P<url>.*)$',views.redirect,name='figure_reverse'),### WTF do I need this handler???????
 
-    url(r'^hmm_compare$', views.test__hmm_compare, name='hmm_compare'),
+    url(r'^figure/hit4cath2cath$', views.test__scatterplot__hit4cath2cath, name= 'test'),
+    url(r'^figure/tst/test/CCXhit', views.test__scatterplot__CCXhit, name= 'test'),
+    url(r'^figure/tst/CCXhit', views.test__scatterplot__CCXhit, name= 'test'),
+    url(r'^figure/tst/test/CCXhit_homsf$', views.test__scatterplot__CCXhit_homsf, name= 'test'),
+    url(r'^figure/tst/test/ConXhit$', views.scatterplot__contrast__crosshit, name= 'test'),
+    # url()
+# test__scatterplot__CCXhit
+    # url(r'^hmm_compare$', views.test__hmm_compare, name='hmm_compare'),
 
     url(r'^hitlist_compare/$', views.tab__hitlist__pair, name='tab__hitlist__pair'),
     url(r'^figure/tst/hitlist_compare/$', views.scatterplot__hitlistPR,),
@@ -27,6 +37,7 @@ urlpatterns = [
     # url(r'^figure/tst/test/CCXhit_homsf$', views.test__scatterplot_hit4cath2cath, name= 'test'),
 
     url(r'^CCXhit/$', views.test__CCXhit, name='CCXhit_handler'),
+    url(r'^saved/$', TemplateView.as_view(template_name="tst/saved_table.html")),
 
 
 
@@ -63,8 +74,6 @@ urlpatterns = [
 
 
 
-    url(r'^figure/hit4cath2cath$', views.test__scatterplot_hit4cath2cath, name= 'test'),
-    url(r'^figure/tst/test/CCXhit_homsf$', views.test__scatterplot_hit4cath2cath, name= 'test'),
 
     # url(r'^figure/handler/$',views.scatterplot_qset,name='figure_handler'),
     # url(r'^figure/superfamily/(?P<homsf_id>[\d,\.]+)/$', views.scatterplot_homsf,name='fig_nbscatter'),
@@ -77,6 +86,5 @@ urlpatterns = [
     url(r'^figure/tst/domain/$', views.scatterplot_domain,name='scatterplot_domain_default'),
 
    
-    url(r'^figure(?P<url>.*)$',views.redirect,name='figure_reverse'),### WTF do I need this handler???????
 
 ]

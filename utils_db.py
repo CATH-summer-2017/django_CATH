@@ -1,11 +1,27 @@
 from .models import *
 from domutil.util import *
+from domutil.test import *
 # from utils import *
 import numpy as np 
 from django.db import transaction
 import os ,sys
 
+
 from django.conf import settings
+def iter_filter(qset, **filters):
+    for k,v in filters.iteritems():
+        qset = qset.filter(**{k:v})
+    return qset
+    # hit4cath2cath.objects.values_list('node1__id'.'node2__id')
+    # qset = hit4cath2cath.objects.exclude(node1__parent=F("node2__parent") ) 
+    # qset = CCXhit.exclude(ISS_norm__gte=0.9) 
+
+    # qset = CCXhit.filter(ISS_norm__lte=0.9) 
+
+    qset = qset.order_by('-ISS_norm')
+    qset = qset[:500]
+    return qset
+
 
 def verify_version(ver):
     #### Check whether this version is recorded in 'version' table
@@ -237,8 +253,7 @@ def homsf_stat_fill(h):
         return 0
 
 
-
-from copy import copy
+import copy
 def route_to_node(node_start, node_end, v):
     node = node_start
     lv = node.level.id
@@ -268,7 +283,7 @@ def parse_domain(line, v = verify_version('test') ):
     homsf_str = lst[1]    
     chopping = lst[2]
     
- 
+
     #### Check whether this node exists in 'classification' table
 #     (node,success) = classification.objects.get_bytree(node_str)
     (node,success) = classification.objects.get_bytree(homsf_str)
@@ -312,7 +327,7 @@ def parse_domain(line, v = verify_version('test') ):
             conflict = 1
             
             
-            node = copy(node);
+            node = copy.copy(node);
             node.pk = None
 
             lv = node.level.id
@@ -346,7 +361,18 @@ def parse_domain(line, v = verify_version('test') ):
 
 
 
-#### ISS
+
+
+
+
+
+######################################################################
+######################################################################
+###             ISS               ####################################
+######################################################################
+######################################################################
+######################################################################
+
 def seqheader_guess_parser(header):
     if header.startswith('cath') or header.startswith('CATH') :
         header_parser = seqheader_parse_cath
@@ -357,7 +383,8 @@ def seqheader_guess_parser(header):
     return( [header_parser, seqDB_curr])
 
 
-def verify_exist_entry(jdict, dbmodel):
+def verify_exist_entry(dbmodel, **kwargs):
+    jdict = kwargs
     #### Check whether this version is recorded in 'version' table
     qset = dbmodel.objects.filter(**jdict)
     if qset.count() > 1:
@@ -477,34 +504,61 @@ class ctmat(object):
         self.D_both = None
         self.D_geoavg = None
         self.hits = None
+        self.nodes = None
+        self.hmmnodes = classification.objects.filter(
+            id__in=self.hmms.values_list('cath_node')
+            )
+
+
+        self.cache_hitids = None
+        self.cache_hitlist = None
+        self.cache_hitdict = None
+
+        self.dump_attrs = [
+            "D_raw","D_norm","D_both","D_geoavg","hcounts",
+            'cache_hitids','cache_hitlist','cache_hitdict'
+        ]
+        self.shared_attrs = ['cache_hitids','cache_hitdict']
         
         if letter:
             self.set_letter(letter)
         self.alias = alias or 'test'
         self.name = '%s_%s' % (self.alias, self.letter)
         pass
+    
     def dump(self, name = None, attr = None, **kwargs):
         name = name or self.name
-        if not attr:
-            attr = ["D_raw","D_norm","D_both","D_geoavg",]
+        attr = attr or self.dump_attrs
+
         if not isinstance(attr,list):
             attr = [attr]
         for a in attr:
-            
+            if attr in self.shared_attrs:
+                fname = '%s/%s' (a, name.rstrip('_'+self.letter))
+            else:
+                fname = '%s/%s' % (a, name, )
             try:
-                pk_dump( (a, getattr(self,a) ), name )
+                var = getattr(self, a)
+                if isinstance(var,type(None)):
+                    raise Exception("Do not dump a NoneType object ")
+                pk_dump( var , fname )
                 print "[Msg] managed to dump ""%s"" to %s." % (a, fname)
             except Exception as e:
                 print "[Msg] failed  to dump ""%s"" to %s  Exception: '%s' " % (a, fname, e)
+    
+    def load(self, name =None, attr = None, **kwargs):
+        name = name or self.name
+        attr = attr or self.dump_attrs
 
-    def load(self, name, attr = None, **kwargs):
-        if not attr:
-            attr = ["D_raw","D_norm","D_both","D_geoavg",]
         if not isinstance(attr,list):
             attr = [attr]
         for a in attr:
-#         for f in fields:
-            fname = '%s/%s' % (a, name, )
+        #  for f in fields:
+            if attr in self.shared_attrs:
+                fname = '%s/%s' (a, name.rstrip('_'+self.letter))
+            else:
+                fname = '%s/%s' % (a, name, )
+
             try:
                 setattr(self, a, 
                 pk_load( fname, **kwargs),
@@ -512,7 +566,7 @@ class ctmat(object):
                 print "[Msg] managed to load ""%s"" from %s" % (a, fname)
             except Exception as e:
                 print "[Msg] failed  to load ""%s"" from %s  Exception: '%s' " % (a, fname, e)
-            
+    
     def set_letter(self, letter = 'H'):
         self.letter = letter
         self.field = forward_field[letter]
@@ -521,6 +575,7 @@ class ctmat(object):
         self.forward_dict = list2dict( self.reverse_dict )
         self.l = len(self.reverse_dict)
         self.hits = self.seqs.filter(**{"hit4hmm2hsp__query__%s__in" % self.field : self.reverse_dict })
+        self.nodes = classification.objects.filter(id__in=self.reverse_dict)
 
     
     def OOLD_hit_sum(self,):
@@ -556,7 +611,8 @@ class ctmat(object):
         if dump:
             self.dump( name = self.name, attr = 'hcounts')
         return (hcounts0)
-
+    
+    # def hit_sum()
     def OLD_hit_sum(self,):        
         reset_database_connection()
         hcounts = []
@@ -570,13 +626,10 @@ class ctmat(object):
             hcount = len( hlist & sids)
             hcounts.append(hcount)
         self.hcounts = hcounts
-
-        
-        
+    
     def Draw_para(self,  bsize = 600, pcount = 5, dump = 0 ):
         class MyManager(SyncManager): pass
         MyManager.register('counter',counter)
-
         
         field = self.field
         self.seqs = self.seqs.prefetch_related('hmmprofile_set__' + self.field.rstrip('__id') ) 
@@ -591,8 +644,9 @@ class ctmat(object):
 
         local_listener = listener      
         local_worker = batch_worker
-
-        if __name__=='__main__':
+        # print __name__
+        # if __name__=='__main__':
+        if 1:
                 global m
                 m = MyManager()
                 m.start()
@@ -613,7 +667,7 @@ class ctmat(object):
                     jobs = []
 
                     for INPUT_curr in INPUTs:
-#                         job = pool.Process
+                #         job = pool.Process
                         job  = pool.apply_async(local_worker, (INPUT_curr,), {'q':q, 'field': self.field,'c0':c0,'c1':c1,
                                                                              })
                         jobs.append(job)
@@ -639,9 +693,9 @@ class ctmat(object):
 
         l = self.l
         OUTPUT = dok_matrix( (l+1,l+1), dtype =  np.float)
-#       ########## it's tricky to check whether "None" has been changed to a numpy array.
-#         else:
-#             raise Exception(' A D_raw must be input! ')
+        ########### it's tricky to check whether "None" has been changed to a numpy array.
+        # else:
+        #     raise Exception(' A D_raw must be input! ')
         if isinstance(D_raw,type(None)):
             INPUT = self.D_raw
         else:
@@ -692,8 +746,8 @@ class ctmat(object):
         OUTPUT = dok_matrix( (l+1,l+1), dtype =  np.float)
         
         INPUT = self.D_raw if isinstance(D_raw,type(None)) else D_raw
-#         else:
-#             INPUT = D_raw
+        # else:
+        #     INPUT = D_raw
 
         it  = using_tocoo_izip( INPUT )
         c=counter(it,per=1000)
@@ -720,11 +774,10 @@ class ctmat(object):
             d[k] = v
 
         OUTPUT.update(d)
-
-#         if not self.force:
-#             test__norm( OUTPUT, self.reverse_dict, self.letter, seqDB_curr = self.sDB,
-#           norm_func = ISS_Dnorm_new)
-#             test__key( OUTPUT )
+        # if not self.force:
+        #     test__norm( OUTPUT, self.reverse_dict, self.letter, seqDB_curr = self.sDB,
+        #   norm_func = ISS_Dnorm_new)
+        #     test__key( OUTPUT )
         self.D_geoavg = OUTPUT
         if dump:
             self.dump( name = self.name, attr = 'D_geoavg')
@@ -737,14 +790,18 @@ class ctmat(object):
         behave = "inserting hit_summary for CATH nodes "
         if isinstance(self.hcounts, type(None)):
             self.hit_sum()
-        nodes = classification.objects.in_bulk(self.reverse_dict).items()
+        node_dict = classification.objects.in_bulk(self.reverse_dict)
         
         with transaction.atomic():
             buf = []
-#             for node in self.reverse_dict:
+            # for node in self.reverse_dict:
             c = counter([],INF=1, per = 1E4, prefix = behave)
-            for (node_id,node),hcount in zip(nodes,self.hcounts):
+            for node_id,hcount in zip(self.reverse_dict, self.hcounts):
+                node = node_dict[node_id]
+            # for node,hcount in zip(nodes, self.hcounts):
                 obj  = draft_hsummary( node, self.sDB, hcount)
+                # if node.id == 285899:
+                #     raise Exception(str(hcount))
                 if obj:
                     buf.append(obj)
                     c.count()
@@ -763,10 +820,12 @@ class ctmat(object):
             self.dump( name = self.name, attr = 'D_both')
         return self.D_both
         pass
+    def clear_MySQL(self,):
+        return self.sDB.hit4cath2cath_set.delete()
     def to_MySQL(self, bsize = 1E4, ignoreFunc = lambda x: x < 0.0, dry_run = False, cstop = 0):
         reset_database_connection()
         behave = "inserting ISS hits between S35 "
-#         cutoff = 0.0
+        # cutoff = 0.0
 
         ###################################################
         ##### Inserting S35-S35 ISS-hit ###################
@@ -799,8 +858,6 @@ class ctmat(object):
 
             for (x,y),vs in it0:
                 c.count()
-                
-                v1,v2 = vs
                 if len(v1) == 2:
                     v3 = v2
                     (v1,v2) = v1
@@ -808,7 +865,7 @@ class ctmat(object):
                     v3 = 0
 
                 if ignoreFunc(v2):
-#                 if v2 < cutoff :
+                # if v2 < cutoff :
                     continue
                 node1 = dct_nodes[x]
                 node2 = dct_nodes[y]
@@ -822,7 +879,7 @@ class ctmat(object):
                     'ISS_norm':v2,
                     'hcount_geoavg':v3,
                     'seqDB_id': self.sDB_id,
-#                     'seqDB': self.sDB,
+                    # 'seqDB': self.sDB,
                     
                 }
 
@@ -830,12 +887,117 @@ class ctmat(object):
                 buf.append(obj)
 
                 if not c.i % bsize :
-#                     hit4cath2cath.objects.bulk_create(buf)
+                    # hit4cath2cath.objects.bulk_create(buf)
                     callback(buf)
                     buf = []
                 if c.i == cstop:
                     break
-#             hit4cath2cath.objects.bulk_create(buf)
+            # hit4cath2cath.objects.bulk_create(buf)
             callback(buf)
             buf = []
         c.summary()
+    def hitcount(self, **kwargs):
+    #     if not kwargs:
+    #         kwargs = {"ISS_norm__gte":0.5}
+        if self.sDB.name != 'crosshit':
+                kwargs.update({
+                 'ISS_norm__gte' : 0.5,
+                 'ISS_raw__gte' : 10,        
+                })
+        print self.rfield
+        self.mapper = {}
+        self.mapper['node2hitseq'] = self.rfield
+        self.mapper['node2hit'] = self.rfield.replace('__hits','__hit4hmm2hsp')
+        self.mapper['node2sDB'] = self.rfield + '__seqDB'
+        self.mapper['node2hmmnode2'] = self.rfield.rstrip('__hmmprofile__hits')
+        self.mapper['hmmnode2node'] = self.field.replace('cath_node__','')
+    #     self.mapper['node'] = 
+    #     self.node2hitseq_field = self.rfield
+    #     self.node2hit_field = 
+    #     self.seq_field = self.rfield
+        self.crosshits = self.sDB.hit4cath2cath_set.filter(
+            Q(node1__in=self.hmmnodes)|Q(node2__in=self.hmmnodes)
+        )
+        qset  = self.crosshits.values_list(
+        'node1__'+self.mapper['hmmnode2node'],
+        'node2__'+self.mapper['hmmnode2node'],
+        )
+        for k,v in kwargs.items():
+            qset = qset.filter(**{k:v})
+
+
+        qset = list(qset)
+        #### OLD
+        # lst = (tuple(sorted([self.forward_dict[e] for e in x])) for x in qset)
+        # m = matrify(lst, l = self.l )
+
+
+        #### NEW
+        it = list(qset)
+        count = collections.Counter(it)
+        d = {}
+        for k,v in count.iteritems():
+            d[ tuple(self.forward_dict[e] for e in k) ] = (v,)
+        l = self.l
+        m = dok_matrix( ( l + 1, l + 1 ), dtype = np.int)
+        m.update( d )
+        return m    
+
+
+
+
+
+
+
+
+
+def contrast__qset(m, nodes_ids = None, sDBs = None ):
+    node_obj = blankobj
+    # sDBs = None
+#     vals = classification.objects.filter(id__in = nodes_ids).values()
+#     objs = [node_obj(**val) for val in vals ]
+#     nodes_data = dict(zip(self.reverse_dict,objs))
+    
+    vals = classification.objects.filter(id__in = nodes_ids).order_by('id')
+    objs = vals
+    nodes_data = dict(zip(nodes_ids, objs))
+
+    OUTPUT = fake__query_set()
+    # for k in m.keys():
+    idx = 0
+    for k,v in m.iteritems():
+        idx += 1
+        i,j = [ nodes_ids[x] for x in k ]
+        node1 = nodes_data[i]
+        node2 = nodes_data[j]
+        jdict = { 
+            'id':idx,
+            # 'id': '%d.%d' % (node1.id,node2.id),
+            'node1': node1,
+            'node2': node2,
+            'val1' : v[0],
+            'val2' : v[1],
+        #     'basehit' : hit1 or hit2,
+                }
+        if sDBs:
+            jdict.update({
+                'sDBs' : sDBs,
+                # 'seqDB1':sDB1,
+                # 'seqDB1':sDB1,
+                })
+        OUTPUT.append( PR_obj(**jdict))
+
+    return OUTPUT
+
+def contrast__crosshit(sDB1,sDB2,hmms = None):
+    if not hmms:
+        hmms  = HMMprofile.objects
+    m1 = ctmat( hmms, sDB = sDB1, 
+               alias = sDB1.name , letter = 'H')
+    m2 = ctmat( hmms, sDB = sDB2, 
+               alias = sDB2.name , letter = 'H')    
+    ct1 = m1.hitcount()
+    ct2 = m2.hitcount()
+    ctc = concat_dok([ct1,ct2])
+    OUTPUT = contrast__qset( ctc, m1.reverse_dict, sDBs = [sDB1,sDB2])
+    return OUTPUT

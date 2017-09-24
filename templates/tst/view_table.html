@@ -62,7 +62,9 @@ $( document ).ready(function() {
       // $(document).trigger("light",adom)
       // row=$("#"+adom)
       // highlight(row);
+
       $(this).find("#view3d")[0].click()
+
       // console.log("you cliked", row);
       });
 
@@ -141,7 +143,7 @@ Doped_CATH is a data browser that highlights badly-chopped domains using both st
 
 {% autoescape off %}
 <p class="lead">
-
+{% load util_filter %}
 Parent: <br/> Type: {{ meta.parent | to_class_name }} <br/>
 
 {% if meta.parent %}
@@ -209,7 +211,7 @@ DEBUG: This page is: {{request.get_full_path}}
  PC-Normalised Scatter Plot
 </button>
  -->
- 
+
 <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#config" aria-expanded="true" aria-controls="config">
   Table Legend
 </button>
