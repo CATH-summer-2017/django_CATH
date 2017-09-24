@@ -1,0 +1,913 @@
+<head>
+	
+
+{# {% include "./style.html" %} #}
+{% include "./style_online.html" %}
+
+
+{# {% include "./viewPDB.template" %} #}
+{% include "./viewPDB.html" %}
+{% load util_filter %}
+
+{% load static %}
+<script type="text/javascript">
+// var adom = null;
+
+function highlight(row){
+    row.addClass('bg-info').siblings().removeClass('bg-info');
+    // row[0].scrollIntoView()
+}
+
+function scrollIntoViewIfNeeded($target) {
+    if ($target.position()) {
+        if ($target.position().top < jQuery(window).scrollTop()){
+            //scroll up
+            $('html,body').animate({scrollTop: $target.position().top});
+        }
+        else if ($target.position().top + $target.height() >
+            $(window).scrollTop() + (
+                window.innerHeight || document.documentElement.clientHeight
+            )) {
+            //scroll down
+            $('html,body').animate({scrollTop: $target.position().top -
+                (window.innerHeight || document.documentElement.clientHeight)
+                    + $target.height() + 15}
+            );
+        }
+    }
+}
+// function refresh_highlight(table){
+//   // if adom.node()=
+//   // if row.class()
+//   if (adom==row.id){
+//     row.addClass('bg-info')
+//   };
+// }
+
+// highlight_adom()
+
+
+
+
+function hevent(adom){
+ $(document).trigger("light",adom) 
+};
+
+$( document ).ready(function() {
+
+  $('.clickable-row').on("click",function() {
+      var adom=this.id
+      hevent(adom)
+      // this.find('#view3d')[0].click()
+      // $(document).trigger("light",adom)
+      // row=$("#"+adom)
+      // highlight(row);
+      $(this).find("#view3d")[0].click()
+      // console.log("you cliked", row);
+      });
+
+
+});
+
+
+$(function () {
+  $('[data-toggle="popover"]').popover()
+})
+
+
+function addParameter(url, parameterName, parameterValue, atStart/*Add param before others*/){
+    replaceDuplicates = true;
+    if(url.indexOf('#') > 0){
+        var cl = url.indexOf('#');
+        urlhash = url.substring(url.indexOf('#'),url.length);
+    } else {
+        urlhash = '';
+        cl = url.length;
+    }
+    sourceUrl = url.substring(0,cl);
+
+    var urlParts = sourceUrl.split("?");
+    var newQueryString = "";
+
+    if (urlParts.length > 1)
+    {
+        var parameters = urlParts[1].split("&");
+        for (var i=0; (i < parameters.length); i++)
+        {
+            var parameterParts = parameters[i].split("=");
+            if (!(replaceDuplicates && parameterParts[0] == parameterName))
+            {
+                if (newQueryString == "")
+                    newQueryString = "?";
+                else
+                    newQueryString += "&";
+                newQueryString += parameterParts[0] + "=" + (parameterParts[1]?parameterParts[1]:'');
+            }
+        }
+    }
+    if (newQueryString == "")
+        newQueryString = "?";
+
+    if(atStart){
+        newQueryString = '?'+ parameterName + "=" + parameterValue + (newQueryString.length>1?'&'+newQueryString.substring(1):'');
+    } else {
+        if (newQueryString !== "" && newQueryString != '?')
+            newQueryString += "&";
+        newQueryString += parameterName + "=" + (parameterValue?parameterValue:'');
+    }
+    return urlParts[0] + newQueryString + urlhash;
+};
+
+</script>
+
+ </head>
+
+<title>{{meta.title}}</title>
+<body>
+
+
+<div class="container">
+<section>
+
+<div class="mt-1">
+  <h3 class="display-3">
+   Doped_CATH   
+<button type="button" class="btn btn-info" data-toggle="popover" title="Doped_CATH" data-content="
+Doped_CATH is a data browser that highlights badly-chopped domains using both structure-based and hierarchy-based statistics
+">What is this?</button>
+  </h3>
+</div>
+
+
+{% autoescape off %}
+<p class="lead">
+{% load util_filter %}
+Parent: <br/> Type: {{ meta.parent | to_class_name }} <br/>
+
+{% if meta.parent %}
+
+  {% with field_names=meta.parent.default_cols %}
+    <table class="table table-sm table-bordered">
+      {% include "./table_head.html" %}
+      <tbody>     
+        {% with d=meta.parent %}
+          {% include "./table_row_attr.html" %}      
+        {% endwith %}
+      </tbody>
+    </table>
+
+  {% endwith %}
+
+{% endif %}
+<br/>
+</p>
+<p class="lead">
+How to:<br/>
+{{meta.page_caption}}
+<br/>
+</p>
+
+
+<div class="mt-1">
+  <p>
+  <h4 class="display-5">
+  Listing {{query_set.0 | to_class_name}}
+  </h4>
+  ({{query_set|length}} entries on the page)
+  </p>
+</div>
+
+
+{# <p>Enries are ordered by </p> #}
+{# Another pargarph #}
+
+<p class="table-heading">
+DEBUG: This page is: {{request.get_full_path}} 
+</p>
+
+
+
+
+</section>
+
+
+
+<section>
+
+{% url 'figure_reverse' request.get_full_path as fig_url %}
+<!-- {% url 'figure_reverse' request.path as fig_url %} -->
+
+<p>
+{% for button in meta.buttons %}
+  {% include "./urlbutton.html" %}
+{% endfor %}
+
+<!-- <button class="btn btn-primary" type="button" id="view_plot" onclick="plot_window( addParameter('{{fig_url}}','scatter','raw') + '&{{ request.GET.urlencode }}' );">
+ Raw Scatter Plot
+</button>
+<button class="btn btn-primary" type="button" id="view_plot" onclick="plot_window( addParameter('{{fig_url}}','scatter','pcnorm') +'&{{ request.GET.urlencode }}' );">
+ PC-Normalised Scatter Plot
+</button>
+ -->
+
+<button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#config" aria-expanded="true" aria-controls="config">
+  Table Legend
+</button>
+
+{# {% autoescape off %} #}
+
+
+
+{% include "./table_legend.html" %}
+
+</p>
+
+
+
+<table class="table table-sm table-bordered">
+      
+
+    <thead>
+
+        
+          <tr><th>
+            
+              
+              node1
+              
+            
+          </th>
+        
+          <th>
+            
+              
+              node2
+              
+            
+          </th>
+        
+          <th>
+            
+              
+              node1__domain__domain_id
+              
+            
+          </th>
+        
+          <th>
+            
+              
+              node2__domain__domain_id
+              
+            
+          </th>
+        
+          <th>
+            
+              
+              xhit_urled
+              
+            
+          </th>
+        
+          <th>
+            
+              
+              local_CCXhit
+              
+            
+          </th>
+        
+          <th>
+            
+              
+              compare_hitlist
+              
+            
+          </th>
+        
+          <th>
+            
+              
+              node1_hcount
+              
+            
+          </th>
+        
+          <th>
+            
+              
+              node2_hcount
+              
+            
+          </th>
+        
+          <th>
+            
+              
+              average hit count
+              
+            
+          </th>
+        
+          <th>
+            
+              
+              ISS_raw
+              
+            
+          </th>
+        
+          <th>
+            
+              
+              ISS_norm
+              
+            
+          </th>
+        
+          <th>
+            
+              
+              seqDB
+              
+            
+          </th>
+              
+    </tr></thead>
+      <tbody>     
+        
+            
+        <tr id="dbid_1498691" class="clickable-row bg-info">
+          
+          <th> 
+          
+  
+            
+                2.40.128.90.1.0                
+            
+
+          
+          </th>
+
+          
+          <th> 
+          
+  
+            
+                2.40.128.130.4.0                
+            
+
+          
+          </th>
+
+          
+          <th> 
+          
+  
+            
+                2x55A00                
+            
+
+          
+          </th>
+
+          
+          <th> 
+          
+  
+            
+                4meeA00                
+            
+
+          
+          </th>
+
+          
+          <th> 
+          
+  
+            
+                <a href="http://xhits.cathdb.info/crosshits.php?sf1=2.40.128.90&amp;sf2=2.40.128.130&amp;db_source=Crosshits_v4_1_0">Crosshits_v4_1_0</a>                
+            
+
+          
+          </th>
+
+          
+          <th> 
+          
+  
+            
+                <a href="/tst/CCXhit/?node1__id=282067&amp;node2__id=282080">local_page</a>                
+            
+
+          
+          </th>
+
+          
+          <th> 
+          
+  
+            
+                <a href="/tst/hitlist_compare/?node1__id=282067&amp;seqDB=CATH-S40-nr__4_1_0&amp;node2__id=282080">compare_hitlist</a>                
+            
+
+          
+          </th>
+
+          
+          <th> 
+          
+  
+            
+                51.000
+            
+
+          
+          </th>
+
+          
+          <th> 
+          
+  
+            
+                53.000
+            
+
+          
+          </th>
+
+          
+          <th> 
+          
+  
+            
+                12.845
+            
+
+          
+          </th>
+
+          
+          <th> 
+          
+  
+            
+                9.000
+            
+
+          
+          </th>
+
+          
+          <th> 
+          
+  
+            
+                0.876
+            
+
+          
+          </th>
+
+          
+          <th> 
+          
+  
+            
+                CATH-S40-nr_Ver:4_1_0                
+            
+
+          
+          </th>
+
+          
+        </tr>      
+        
+      </tbody>
+    </table>
+
+<table class="table table-sm table-bordered">
+      
+
+    <thead>
+
+        
+          <tr><th>
+            
+              
+              node1
+              
+            
+          </th>
+        
+          <th>
+            
+              
+              node2
+              
+            
+          </th>
+        
+          <th>
+            
+              
+              node1__domain__domain_id
+              
+            
+          </th>
+        
+          <th>
+            
+              
+              node2__domain__domain_id
+              
+            
+          </th>
+        
+          <th>
+            
+              
+              xhit_urled
+              
+            
+          </th>
+        
+          <th>
+            
+              
+              local_CCXhit
+              
+            
+          </th>
+        
+          <th>
+            
+              
+              compare_hitlist
+              
+            
+          </th>
+        
+          <th>
+            
+              
+              node1_hcount
+              
+            
+          </th>
+        
+          <th>
+            
+              
+              node2_hcount
+              
+            
+          </th>
+        
+          <th>
+            
+              
+              average hit count
+              
+            
+          </th>
+        
+          <th>
+            
+              
+              ISS_raw
+              
+            
+          </th>
+        
+          <th>
+            
+              
+              ISS_norm
+              
+            
+          </th>
+        
+          <th>
+            
+              
+              seqDB
+              
+            
+          </th>
+              
+    </tr></thead>
+      <tbody>     
+        
+            
+        <tr id="dbid_1694711" class="clickable-row bg-info">
+          
+          <th> 
+          
+  
+            
+                3.20.20.70.65.0                
+            
+
+          
+          </th>
+
+          
+          <th> 
+          
+  
+            
+                3.20.20.120.51.0                
+            
+
+          
+          </th>
+
+          
+          <th> 
+          
+  
+            
+                4n02A00                
+            
+
+          
+          </th>
+
+          
+          <th> 
+          
+  
+            
+                3i4kA02                
+            
+
+          
+          </th>
+
+          
+          <th> 
+          
+  
+            
+                <a href="http://xhits.cathdb.info/crosshits.php?sf1=3.20.20.70&amp;sf2=3.20.20.120&amp;db_source=Crosshits_v4_1_0">Crosshits_v4_1_0</a>                
+            
+
+          
+          </th>
+
+          
+          <th> 
+          
+  
+            
+                <a href="/tst/CCXhit/?node1__id=285899&amp;node2__id=286282">local_page</a>                
+            
+
+          
+          </th>
+
+          
+          <th> 
+          
+  
+            
+                <a href="/tst/hitlist_compare/?node1__id=285899&amp;seqDB=CATH-S40-nr__4_1_0&amp;node2__id=286282">compare_hitlist</a>                
+            
+
+          
+          </th>
+
+          
+          <th> 
+          
+  
+            
+                886.000
+            
+
+          
+          </th>
+
+          
+          <th> 
+          
+  
+            
+                1.000
+            
+
+          
+          </th>
+
+          
+          <th> 
+          
+  
+            
+                179.131
+            
+
+          
+          </th>
+
+          
+          <th> 
+          
+  
+            
+                106.000
+            
+
+          
+          </th>
+
+          
+          <th> 
+          
+  
+            
+                0.900
+            
+
+          
+          </th>
+
+          
+          <th> 
+          
+  
+            
+                CATH-S40-nr_Ver:4_1_0                
+            
+
+          
+          </th>
+
+          
+        </tr>      
+        
+      </tbody>
+    </table>
+
+{% endautoescape  %}
+
+{# <iframe id="encoder_iframe" height="75%" width="50%" src="{%static 'mpld3_test.html'%}"/></iframe> #}
+
+
+</div>
+</section>
+
+<script type="text/javascript">
+function plot_window(fig_url){
+        // var iframe_tag = `<iframe id="encoder_iframe" height="100%" width="100%" src=`+fig_url+`/></iframe>`
+        // "use strict";
+        var mypanel=$.jsPanel({
+            position: {
+                my: "right-top",
+                at: "right-top",
+                offsetY: 52
+            },
+            contentSize:{width:"500px",height:"600px"},
+            dragit:{
+              contaminent:'parent',
+              disableui:true,
+              // disable:true,
+              // grid: [50, 50],
+              start: function(){
+                this.dragit('disable')
+              },
+              stop: function () {
+                this.dragit('disable')
+                // console.dir('dragging stopped!')
+              },              
+            },
+            resizeit:{
+              'disableui':true,
+
+            },
+            draggable:'disabled',
+            size: 'auto',
+            headerTitle: "ScatterPlot",
+            // content:'',
+            contentIframe:{
+              src: fig_url
+            },
+            callback:function(){
+             console.dir(this.content.children("iframe")[0])
+            },
+        });
+            mypanel.on("mousedown",function(){
+              if(mypanel.option.dragit.disable==false){
+                mypanel.dragit()
+              }
+            });
+            // var id="#dbid_2483"
+            var id="#dbid_264136"
+            var id="#dbid_264136"
+
+            var iframe=mypanel.content.children("iframe")
+
+            // iframe.ready(function(){
+            //  console.dir( iframe.contents().find("body")[0]
+            //   )
+            // })
+
+            // iframe.on("load",function() {
+            //     // RunAfterIFrameLoaded(
+            //     console.dir("path is:")
+            //     var path=iframe.contents()
+            //     .find(id)[0];
+            //   console.dir( path
+            //     )
+            //   console.dir(this.contentWindow)
+            //   clicked=this.contentWindow.clicked
+
+            //   var dsel=d3.select(path)
+            //   // .each(clicked)
+
+            //   console.dir(dsel)
+            //   dsel.each(
+            //     clicked
+            //   )
+            //   // boundfunction=clicked.bind(path)
+            //   // console.log(path[0])
+
+            //   // boundfunction(d,i)
+            //   // clicked(d,i)
+            //   // path.mousedown()
+            //   // )
+
+            // });            
+
+
+        // mypanel.resize("500px","600px")
+
+        // mypanel.css({'width':'500', 'height':'600'})
+        // jsPanel.resizeContent(mypanel);
+            // mypanel.content.append("<a href='#row1' onclick='$(`#row10`).click();' data-toggle='table'>row1</a>")
+            // mypanel.size='auto';
+            // mypanel.content.append(`<iframe id="encoder_iframe" height="100%" width="100%" src="{%static 'mpld3_test.html'%}"/></iframe>`)
+            
+            // mypanel.content.append(`<iframe id="encoder_iframe" height="100%" width="100%" src=`+fig_url+`/></iframe>`)
+    };
+
+</script>
+{# {% endwith %} #}
+{# </iframe> #}
+
+
+
+<script type="text/javascript">
+
+
+// $( document ).ready(function() {
+//    $('.clickable-row').click(function() {
+//     // $(this).addClass('highlight').siblings().removeClass('highlight');
+//     // $(this).addClass('active').siblings().removeClass('active');
+
+//     // $(this).addClass('bg-info').siblings().removeClass('bg-info');
+//     highlight(this);
+
+//     // $(this).find("#view3d").attr("href").eval();
+//     // $(this).find("#view3d").trigger()
+//     var elem = $(this).find("#view3d");
+//     elem = elem.get(0);
+//     elem.click();
+//     console.dir(elem);
+//     // elem.click(function(){return true;}).click();
+//     // elem.click()
+
+
+//   // row was clicked
+//     });
+// });
+
+$(document).ready(function(){
+  $(document).on("light",{},
+    function(event,adom){
+    divid="#"+adom
+    console.log("you cliked", divid);
+    
+    var row = $(document).find(divid)
+    highlight(row)  
+
+    console.log('event target is',$(event))
+    scrollIntoViewIfNeeded(row)
+    // row[0].scrollIntoView(
+    //   {
+    //   behavior: "smooth", // or "auto" or "instant"
+    //   block: "start" // or "end"
+    //   }
+    // )
+  })
+
+})
+
+</script>
+
+
+
+</body>
