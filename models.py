@@ -38,7 +38,15 @@ class blankobj(object):
             setattr(self,k,v)
         pass
 
-# domain_model = 
+# class text(models.Model):
+#     content = models.TextField(blank = True, null = True)
+
+
+
+
+
+
+
 from django_CATH.models import domain as domain_model
 
 # class tabModel(models.Model):
@@ -74,7 +82,6 @@ linear = lambda d:  ' '.join( str(x) for x in sum([ [k,v] for k,v in d.iteritems
 class node_manager(models.Manager):
 
     def get_bytree(self, node_str, qnode = None):
-
 
         lst = [int(x) for x in node_str.split('.')]
         if lst[-1]:
@@ -138,6 +145,7 @@ class Question(models.Model):
         return self.pub_date >= timezone.now() - datetime.timedelta(days=1)
     def to_values(self):
         return self
+
 
 class Choice(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
@@ -566,7 +574,7 @@ class hit4cath2cath(models.Model):
             "seqDB": self.seqDB.as_param(),
             } )
         # url = reverse('CCXhit_handler',args=[])
-        baseurl = reverse("tab__hitlist__pair",args=[])
+        baseurl = reverse("tab__hitlistPR",args=[])
         url = "%s?%s" % (baseurl,pstr)
 
         return a_href("compare_hitlist", url)        
