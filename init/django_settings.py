@@ -17,7 +17,7 @@ TEMPLATE_STRING_IF_INVALID = 'No attr:'
 INSTALLED_APPS += (
 	'tst.apps.Config',
 	'django_extensions',
-	'mptt',
+	#'mptt',
 )
 
 if os.getenv('TRAVIS', None):
