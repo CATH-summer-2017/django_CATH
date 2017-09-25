@@ -14,9 +14,8 @@ urlpatterns = [
     url(r'^$', views.index, name='hello'),
 
     url(r'^test/$', views.test, name='test'),
-    url(r'^test/CCXhit$', views.test__CCXhit, name='test'),
+    url(r'^test/CCXhit$', views.test__CCXhit__S35, name='test'),
     url(r'^test/CCXhit_homsf$', views.test__CCXhit_homsf, name='test'),
-    url(r'^test/hmm_compare$', views.test__hmm_compare, name='test'),
     url(r'^test/ConXhit$', views.tab__contrast__crosshit),
 
     # url(r'^figure(?P<url>.*)$',views.redirect,name='figure_reverse'),### WTF do I need this handler???????
@@ -26,17 +25,14 @@ urlpatterns = [
     url(r'^figure/tst/CCXhit', views.test__scatterplot__CCXhit, name= 'test'),
     url(r'^figure/tst/test/CCXhit_homsf$', views.test__scatterplot__CCXhit_homsf, name= 'test'),
     url(r'^figure/tst/test/ConXhit$', views.scatterplot__contrast__crosshit, name= 'test'),
-    # url()
-# test__scatterplot__CCXhit
-    # url(r'^hmm_compare$', views.test__hmm_compare, name='hmm_compare'),
 
-    url(r'^hitlist_compare/$', views.tab__hitlist__pair, name='tab__hitlist__pair'),
+    url(r'^hitlist_compare/$', views.tab__hitlistPR, name='tab__hitlistPR'),
     url(r'^figure/tst/hitlist_compare/$', views.scatterplot__hitlistPR,),
     # url(r'^figure/tst/hitlist_compare$', views.test__scatterplot__hitlistPR, name='test'),
 
     # url(r'^figure/tst/test/CCXhit_homsf$', views.test__scatterplot_hit4cath2cath, name= 'test'),
 
-    url(r'^CCXhit/$', views.test__CCXhit, name='CCXhit_handler'),
+    url(r'^CCXhit/$', views.test__CCXhit__S35, name='CCXhit_handler'),
     url(r'^saved/$', TemplateView.as_view(template_name="tst/saved_table.html")),
 
 
