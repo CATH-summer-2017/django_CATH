@@ -356,70 +356,7 @@ def tab__CCXhit__S35(request, qset, **kwargs):
 	return response 
 
 
-def cross_qset(node1__id,node2__id):
-	node1 = classification.objects.get(id = node1__id)
-	node2 = classification.objects.get(id = node2__id)
-	s35_1 = node1.classification_set.all()
-	s35_2 = node2.classification_set.all()
-	hits_id1A = set(s35_1.values_list("hit4cath2cath1",flat = True) )
-	hits_id1B = set(s35_1.values_list("hit4cath2cath2",flat = True) )
-	hits_id2A = set(s35_2.values_list("hit4cath2cath1",flat = True) )
-	hits_id2B = set(s35_2.values_list("hit4cath2cath2",flat = True) )
-
-	hits_ids = ( hits_id1A | hits_id1B)  &  ( hits_id2A | hits_id2B)
-	# qset =  CCXhit.filter(id__in=hits_ids)
-	qset =  CCXhit.in_bulk(hits_ids)
-
-	# raise Exception("here")
-
-	return qset
-
-##### DEPRECATED #######
-##### DEPRECATED #######
-##### DEPRECATED #######
-##### DEPRECATED #######
-def init__CCXhit__qset(request):
-
-	filters = request.GET or {"ISS_norm__lte":0.9}
-	sDB_dict = read__seqDB(request)
-	sDB = seqDB.objects.get(**sDB_dict)
-	filters.update({'seqDB':sDB.id})
-	# raise Exception("here")
-	kwargs = {}
-
-	# if 'node1__id' in filters.keys():
-	if 0:
-		node1__id =  filters["node1__id"]
-		node2__id =  filters["node2__id"]
-		node_ids = sorted(
-			[int(node1__id),
-			int(node2__id)
-			])
-		
-		qset = cross_qset( node_ids[0],node_ids[1])
-		# print ""
-		# raise Exception("here")
-
-		node1 = classification.objects.get(id = node1__id)
-		node2 = classification.objects.get(id = node2__id)
-
-
-		hit = hit4cath2cath.objects.get(
-			node1=node_ids[0],
-			node2=node_ids[1])
-
-
-		kwargs['page_caption'] = '''
-		<br/>Node1: %s 
-		<br/>Node2: %s
-		<br/>ISS_raw:%s
-		<br/>ISS_norm%s''' % (node1,node2, hit.ISS_raw, hit.ISS_norm)
-	else:
-		qset = iter_filter(CCXhit,**filters)
-	return qset	# qset = CCXhit.filter(**filters) 
-
-
-def test__CCXhit(request):
+def test__CCXhit__S35(request):
 	# filters = request.GET.get('filters', {"ISS_norm__lte":0.9})
 	qset = init__CCXhit__qset(request)
 	# .prefetch_related(["node1__hmmprofile","node2__hmmprofile"])
@@ -429,67 +366,6 @@ def test__CCXhit(request):
 	# 		)
 	return tab__CCXhit__S35(request,qset,)
 
-def test__hmm_compare(request,hmm1__id = None,hmm2__id = None, sDB = None):
-	# params = request.GET or {"hmm1__id":17150,"hmm2__id":4067}
-	hmm1__id = request.GET.get("hmm1__id",'17150')
-	hmm2__id = request.GET.get("hmm2__id",'4067')
-
-	hmm1 = HMMprofile.objects.get(id = hmm1__id)
-	hmm2 = HMMprofile.objects.get(id = hmm2__id)
-	# interhit = 
-	hitlist1 = hmm1.hit4hmm2hsp_set
-	hitlist2 = hmm2.hit4hmm2hsp_set
-	# raise Exception()
-
-	return hitlist_compare(request, hitlist1,hitlist2)
-	# pass
-
-
-###### OLD ############
-class fake__query_set(list):
-	def __init__(self, data):
-		self.data  =  data
-		list.__init__(self, data)
-
-	def __getitem__(self, key):
-		return list.__getitem__(self, key)
-		# list.__init__(data)
-	# def __iter__(self):
-	# 	return (x for x in self.data)
-	# def __len__(self):
-	# 	return len(self.data)
-
-   	def values_list(self, *args ):
-		# its = []
-		its = [ [getattribute_iter( q, attr) for q in self.data] for attr in args]
-		return izip(*its)
-
-	def filter(self):
-		raise Exception("Yet to be implemented ")
-
-	def order_by(self, *args, **kwargs):
-		return self
-
-
-
-
-################DPERECATED#####
-def read__seqDB(request, default = "name CATH-S40-nr version 4_1_0"):
-	sDB_dict  = dict(
-					zip(
-						["name","version"], request.GET.get("seqDB", default).split("__") 
-						) 
-					)
-	return sDB_dict
-
-def read__filter(request,default = None):
-	filter_str= request.GET.get("filter", default )
-	if filter_str:
-		filter_list = filter_str.split()
-		Dcrit = dict(zip( filter_list[::2], filter_list[1::2]) )
-	else:
-		Dcrit = {}
-	return Dcrit
 	
 ###### IN USE #########
 def param2dict(request, key, default = None):
@@ -508,7 +384,7 @@ def read__seqDB(request, **kwargs):
 def read__filter(request, **kwargs):
 	d = param2dict(request, 'filter', **kwargs)
 	return d
-def hitlistPR__param2qset(request):
+def init__hitlistPR(request):
 	node1__id = request.GET.get("node1__id",'309754')
 	node2__id = request.GET.get("node2__id",'310524')
 	
@@ -520,11 +396,6 @@ def hitlistPR__param2qset(request):
 	
 	sDB_dict  = read__seqDB(request)
 	sDB = seqDB.objects.get(**sDB_dict)
-	# try:
-	# 	sDB = seqDB.objects.get(**sDB_dict)
-	# except Exception as e:
-	# 	msg = "you specifed seqDB with:%s <br/> But exception is raised: '%s' <br/> try append '/?seqDB=CATH__v4_1_0' to your url" % (sDB_dict, e)
-	# 	return HttpResponse(msg)
 
 	qset = hitlist_compare(
 		node1__id,
@@ -543,10 +414,9 @@ def hitlistPR__param2qset(request):
 
 	return qset,parent
 	# return ( [ qset, parent])
-def tab__hitlist__pair(request, ):
-	# (node1__id,node2__id,sDB_dict) = parse__hitlistPR__param(request)
+def tab__hitlistPR(request, ):
 
-	qset,parent = hitlistPR__param2qset(request)
+	qset,parent = init__hitlistPR(request)
 	# raise Exception('/tst/figure' + request.get_full_path())
 
 
@@ -648,6 +518,11 @@ def filter__Xhit(qset):
 	# return qset.exclude(Q(node1__parent=F("node2__parent")) & Q(node1__level__letter='S')) 
 
 
+def read__Cver(request, **kwargs):
+	kwargs['default'] = kwargs.get('default', "name 4_1_0")
+	d = param2dict(request, 'Cver',**kwargs)
+	return d
+
 
 def init__CCXhit__qset(request = None):
 	# letter = 'H'
@@ -661,13 +536,15 @@ def init__CCXhit__qset(request = None):
 	# order = ['-ISS_norm']
 	order = []
 	if request:
-		sDB_dict  = read__seqDB(request)
-		sDB = seqDB.objects.get(**sDB_dict)
-		qset = filter__Xhit( sDB.hit4cath2cath_set )
-		# crit.update({'seqDB':sDB.id})
+		sDB_dict = read__seqDB(request)
+		vdict    = read__Cver(request)
 		crit.update(read__filter(request))
 
-		# qset = CCXhit.filter(node1__level__letter='H') 
+		sDB = seqDB.objects.get(**sDB_dict)
+		Cver   = version.objects.get(**vdict) 
+
+
+		qset = filter__Xhit( sDB.hit4cath2cath_set.filter(node1__version = Cver ) )
 
 	for k,v in crit.items():
 		qset = qset.filter(**{k:v})
@@ -677,32 +554,14 @@ def init__CCXhit__qset(request = None):
 
 	return qset
 
-
 def test__CCXhit_homsf(request):
-	# hit4cath2cath.objects.values_list('node1__id'.'node2__id')
-	# qset = hit4cath2cath.objects.exclude(node1__parent=F("node2__parent") ) 
-	# qset = CCXhit.exclude(ISS_norm__gte=0.9) 
-	# .prefetch_related(["node1__hmmprofile","node2__hmmprofile"])
-	# qset = qset.annotate(
-	# 	# node1_hitCount = Count("node1__hmmprofile__hits"), 
-	# 	# node2_hitCount = Count("node2__hmmprofile__hits"),
-	# 		)
+	'''
+	##############################
+	Experimental and not useful dut to rehitting: same homsf hitting same sequence via different hmm profiles.
+	##############################
+	'''
 	qset = init__CCXhit_homsf(request)
 
-	# cols = ['node1',
-	# # 'node1__id','node2__id',
-	# 'node2','xhit_urled',
-	# 'local_CCXhit',
-	# 'compare_hitlist',
-	# 'node1__hit_summary_set__all?__0__hcount',
-	# 'node2__hit_summary_set__all?__0__hcount',
-	# 'hcount_geoavg',
-	# # 'node2__hit_summary__hcount', 
-
-	#   # 'node1__%s__count' % rv_field,
-	#   # 'node2__%s__count' % rv_field,
-
-	#    'ISS_raw', 'ISS_norm']
 	cols = None
 
 	title = 'ISS_test'
@@ -861,9 +720,20 @@ from utils_db import *
 # def test__contrast__crosshit(request):
 
 def	init__contrast__crosshit(request):
-	sDB1 = seqDB.objects.get(name='CATH-S40-nr')
-	sDB2 = seqDB.objects.get(name='crosshit')
-	qset = contrast__crosshit(sDB1,sDB2)
+	Cver = version.objects.get(**read__Cver(request))
+	# print Cver
+	hmms = HMMprofile.objects.filter(cath_node__version=Cver)
+	# raise Exception(hmms)
+	# read__param
+	sDB1 = seqDB.objects.get(
+		**param2dict(request,'seqDB1','name CATH-S40-nr version 4_1_0')
+		)
+	sDB2 = seqDB.objects.get(
+		**param2dict(request,'seqDB2','name crosshit version 4_1_0')
+		)
+	# sDB1 = seqDB.objects.get(name='CATH-S40-nr',version=)
+	# sDB2 = seqDB.objects.get(name='crosshit')
+	qset = contrast__crosshit(sDB1,sDB2, hmms)
 	return qset
 def tab__contrast__crosshit(request,):
 	qset = init__contrast__crosshit(request)
@@ -879,7 +749,7 @@ def tab__contrast__crosshit(request,):
 		request,
 		qset,
 		buttons = [button1],
-		cols = qset[0].default_cols,
+		# cols = qset[0].default_cols,
 		)
 
 def scatterplot__contrast__crosshit(request):
@@ -1135,7 +1005,7 @@ def scatterplot__hitlistPR(request,
 	qset = None,
 	# crit = {'s35_count__gt':10,}	
 	):
-	qset,parent = hitlistPR__param2qset(request)
+	qset,parent = init__hitlistPR(request)
 	if isinstance(qset, list):
 		qset = fake__query_set(qset)
 
