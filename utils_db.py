@@ -272,21 +272,24 @@ def route_to_node(node_start, node_end, v):
     return node
        
 ##### Custom function !!!
-def parse_domain(line, v = verify_version('test') ):
+def parse_domain(jdict, v = verify_version('test'), rootnode = None):
 #     global cc
 #     ### verify version
 #     ver = 'putative'
 #     v = verify_version(ver)
     
-    lst = line.split()
-    domain_id = lst[0]
-    homsf_str = lst[1]    
-    chopping = lst[2]
+    # lst = line.split()
+    # domain_id = lst[0]
+    # homsf_str = lst[1]    
+    # chopping = lst[2]
     
+    domain_id = jdict['domain_id']
+    homsf_str = jdict['homsf_str']    
+    chopping =  jdict.get('chopping',None)
 
     #### Check whether this node exists in 'classification' table
 #     (node,success) = classification.objects.get_bytree(node_str)
-    (node,success) = classification.objects.get_bytree(homsf_str)
+    (node,success) = classification.objects.get_bytree(homsf_str, qnode = rootnode)
     
     ### recursively  create new superfamily if not existing
 #     print(levels)
@@ -487,7 +490,7 @@ def draft_hsummary(node, sDB, hcount, node_id = None):
         # q = hit_summary()
         
 class ctmat(object):
-    def __init__(self, hmms, sDB = None, seqs = None, letter = None, 
+    def __init__(self, hmms = None, Cver = None, sDB = None, seqs = None, letter = None, 
         alias = None,
         force = 0,):
         self.force = force 
@@ -498,6 +501,8 @@ class ctmat(object):
             self.sDB = seqs[0].seqDB
         self.sDB_id = self.sDB.id
         self.seqs = seqs
+        if Cver:
+            hmms = HMMprofile.objects.filter(id__in=Cver.classification_set.values_list('hmmprofile'))
         self.hmms = hmms
         self.D_raw = None
         self.D_norm = None
@@ -571,36 +576,19 @@ class ctmat(object):
         self.letter = letter
         self.field = forward_field[letter]
         self.rfield = reverse_field[letter]
-        self.reverse_dict = sorted(set( self.hmms.values_list( self.field, flat = True)))
+        self.reverse_dict = sorted(set( self.hmms.values_list( self.field, flat = True).distinct()))
         self.forward_dict = list2dict( self.reverse_dict )
         self.l = len(self.reverse_dict)
         self.hits = self.seqs.filter(**{"hit4hmm2hsp__query__%s__in" % self.field : self.reverse_dict })
         self.nodes = classification.objects.filter(id__in=self.reverse_dict)
+        self.mapper = {}
+        self.mapper['node2hitseq'] = self.rfield
+        self.mapper['node2hit'] = self.rfield.replace('__hits','__hit4hmm2hsp')
+        self.mapper['node2sDB'] = self.rfield + '__seqDB'
+        self.mapper['node2hmmnode'] = self.rfield.rstrip('__hmmprofile__hits')
+        self.mapper['hmmnode2node'] = self.field.replace('cath_node__','')
 
-    
-    def OOLD_hit_sum(self,):
-        all_nodes = classification.objects.filter(version__name='v4_1_0')
-        curr_nodes = all_nodes.filter(level__letter = self.letter).defer(self.rfield.replace("__hits","__text"))
         
-        #   %%time
-        ########################################################
-        ###### Slightly faster    ####################
-        ########################################################
-        qset = curr_nodes.annotate(
-        hcount=Count(Case(
-                When(**{
-                    self.rfield+"__seqDB":self.sDB,
-                    "then":1}),
-        #         output_field=CharField(),
-            ))
-        )
-        hcounts = qset.values_list('id','hcount')
-        # dict()
-        # lst = list(hcounts1)
-        d = dict( list(hcounts) )
-        hcounts = [ d[x] for x in self.reverse_dict]
-        self.hcounts = hcounts
-    
     def hit_sum(self, dump = 0):
         if isinstance(self.hits, type(None)):
             self.hits = self.seqs.filter(**{"hit4hmm2hsp__query__%s__in" % self.field : self.reverse_dict })
@@ -821,7 +809,7 @@ class ctmat(object):
         return self.D_both
         pass
     def clear_MySQL(self,):
-        return self.sDB.hit4cath2cath_set.delete()
+        return self.sDB.hit4cath2cath_set.filter(node1__version=self.Cver).delete()
     def to_MySQL(self, bsize = 1E4, ignoreFunc = lambda x: x < 0.0, dry_run = False, cstop = 0):
         reset_database_connection()
         behave = "inserting ISS hits between S35 "
@@ -858,6 +846,8 @@ class ctmat(object):
 
             for (x,y),vs in it0:
                 c.count()
+
+                v1,v2 = vs
                 if len(v1) == 2:
                     v3 = v2
                     (v1,v2) = v1
@@ -943,6 +933,78 @@ class ctmat(object):
         m.update( d )
         return m    
 
+    def MySQL_hitPR( self, bsize = 1E4):
+        hmm2cath = dict(self.hmms.values_list('id',self.field))
+        DB_hits = hit4hmm2hsp.objects.filter(target__seqDB=self.sDB)
+        vals = list(DB_hits.values())
+        for x in vals:
+            x['node_id']=hmm2cath[x['query_id']]
+        vals = sorted(vals,key = lambda x: [x['target_id'], x['node_id']])
+        it = itertools.groupby(vals,key = lambda x:x['target_id'])
+        it = itertools.chain(*[itertools.combinations(y,2) for x,y in it])
+
+        def pair__hit4hmm2hspDict( lst ):
+            hit1,hit2 = lst
+            if hit1['node_id'] == hit2['node_id']:
+                return None
+            hits = lst
+        #     if hit1['id'] > hit2['id']:
+        #         hits=[hit2,hit1]
+        #     else:
+        #         hits=[hit1,hit2]
+            geoavg  = ( 
+                    (hit2['end'] + 1 - hit2['start']) * 
+                    (hit1['end'] + 1 - hit1['start']) 
+                    ) **0.5
+            overlap = (
+            min( hit1['end'], hit2['end']) + 1 -
+            max( hit1['start'],hit2['start'])
+            )
+
+            jdict = {
+                'hit1_id':hits[0]['id'],
+                'hit2_id':hits[1]['id'],
+                'geoavg' : geoavg,
+                'overlap': overlap,
+            }
+            return jdict
+        def callback(buf):
+            hit4hmm2hspPR.objects.bulk_create(buf)
+
+        reset_database_connection()
+        behave = "inserting hit4hmm2hspPR for CATH nodes "
+
+        try:
+    #         test
+    #     if 1:    
+            with transaction.atomic():
+                buf = []
+                # for node in self.reverse_dict:
+                c = counter([],INF=1, per = bsize, prefix = behave)
+                for obj in it:
+                    obj = pair__hit4hmm2hspDict(obj)
+    #                 c.count()
+
+                    if obj:
+                        obj = hit4hmm2hspPR(**
+                            obj
+                           )
+                        buf.append(obj)
+                        c.count()
+                    if not c.i % bsize:
+            #             hit4cath2cath.objects.bulk_create(buf)
+                        callback(buf)
+                        buf = []    
+                    if not (c.i + 1)  % 1E5:
+                        pass
+    #                     raise Exception()
+                callback(buf)
+        except Exception as e: 
+            print str(e)
+            pass
+        c.summary()
+        pass
+
 
 
 
@@ -990,7 +1052,7 @@ def contrast__qset(m, nodes_ids = None, sDBs = None ):
     return OUTPUT
 
 def contrast__crosshit(sDB1,sDB2,hmms = None):
-    if not hmms:
+    if isinstance(hmms,type(None)):
         hmms  = HMMprofile.objects
     m1 = ctmat( hmms, sDB = sDB1, 
                alias = sDB1.name , letter = 'H')
@@ -1001,3 +1063,320 @@ def contrast__crosshit(sDB1,sDB2,hmms = None):
     ctc = concat_dok([ct1,ct2])
     OUTPUT = contrast__qset( ctc, m1.reverse_dict, sDBs = [sDB1,sDB2])
     return OUTPUT
+
+
+
+
+
+
+
+def import_seqDB(seqDB_curr, INPUT, fmt =None, header2acc = None, **kwargs):
+    '''
+    Dependent on global variables
+    '''
+    behave = "import sequence database"
+
+    if "debug" not in locals(): debug = 0
+    reset_database_connection()
+    from Bio import SeqIO
+
+    p_clean = re.compile('[^-,^\.]')
+    oldseqs = seqDB_curr.sequence_set.all()
+
+
+    from time import time
+    t0 = time()
+    useFisrt = 1
+    failcount = 0
+
+    iterator = SeqIO.parse( INPUT, fmt )
+    c = counter(iterator,INF=1,per = 1000)
+    iterator = SeqIO.parse( INPUT, fmt )
+
+    with transaction.atomic():
+        for obj in iterator:
+
+            acc = header2acc( obj )
+            seq = p_clean.sub('',
+                              obj._seq.tostring())
+            length = len(obj.seq)
+            try:
+                if acc.islower():
+                    raise Exception('accession is all lowercase!')
+                jdict = {
+                    'acc':acc,
+                    'length':length,
+                    'seqDB':seqDB_curr,
+                }
+
+                seqobjs = oldseqs.filter(**jdict)
+                if not seqobjs.exists():
+                    seqobj = sequence(**jdict)
+                    seqobj.save()
+    #                     print "created %s"%jdict['acc']
+                elif seqobjs.count() > 1:                   
+                    print jdict['acc']
+                else:
+                    pass
+
+            except Exception as e:
+                msg = "%s failed for %s " % (acc, e)
+                if debug: print >>sys.__stdout__, msg
+                c.fail( msg , acc)
+            finally:
+                c.count()
+
+
+    c.summary( behave,INPUT )
+
+
+from tst.domutil.util import *
+def import_hmm(Cver,INPUT, header2acc = None, **kwargs):
+    behave = "importing HMM profiles to %s" % (INPUT,Cver )
+    nodes = Cver.classification_set
+    from time import time
+    import re
+
+    p_header = re.compile("NAME.*?\n")
+
+    lst = parse_hmmlib( INPUT )
+    c = counter( lst,INF = 1, per = 1000 )
+    lst = parse_hmmlib( INPUT )
+    failcount = 0
+
+    try:
+#     if 1:
+        with transaction.atomic():
+            for hmm_text in lst:
+                c.count()
+                header = p_header.findall(hmm_text)[0]
+                acc = header2acc(header)
+                length = int(p_hmmlen.findall(hmm_text)[0])
+
+    #             acc = next(header_gen)
+                try:
+    #                 cnode = domain.objects.get(domain_id = acc).classification
+                    cnode = nodes.get(domain__domain_id = acc)
+                    if hasattr(cnode,'hmmprofile'):
+                        pass
+                    else:
+                        hmm = HMMprofile(
+                                    cath_node_id = cnode.id,
+                                    text = hmm_text,
+                                    length = length
+                                    )
+                        hmm.save()
+                except Exception as e:
+                    msg = "failed for %s for Exception:%s" %( acc, e)
+                    c.fail( msg, acc )
+
+    except Exception as e:
+        print "early stop due to %s" % e
+    c.summary( behave,INPUT )
+
+
+
+
+def import_domtbl(INPUT, Cver, sDB):    
+    '''
+        # INPUT = full('$SEQlib/hmm/domtbl/cath-dataset-nonredundant-S40-v4_0_0_cath-S35-hmm3-v4_0_0.domtbl')
+        # f_handles = [f0]
+    '''
+# if 1:
+    ts = []
+    # for pcount in [9,10,11,12]:
+    pcount = 9
+
+    hmms = HMMprofile.objects.filter(id__in=Cver.classification_set.values_list('hmmprofile'))
+    acc2hmm_raw  = dict(hmms.defer('text').values_list("cath_node__domain__domain_id","id"))
+    acc2seq_raw =  dict(sDB.sequence_set.filter().values_list('acc','id'))
+
+    def parse_worker(fakefile, q, pxs, fmt = 'hmmsearch3-domtab'):
+    # def parse_worker(fakefile, fmt = 'hmmsearch3-domtab'):
+        c0,acc2hmm,acc2seq = pxs
+        import sys
+        print fakefile
+    #     print>> sys.__stdout__,'inited'
+    #     print >> sys.__stdout__,fakefile.closed
+        parser = SearchIO.parse(fakefile, fmt)
+        for q_hits in parser:
+        #     print q_hits
+            acc = p_cathdomain.findall(q_hits.id)[0]
+
+            try:
+                c1 = counter([],INF=-1,ifprint = 0 )
+                query_id = acc2hmm[ acc ]
+                jjdict = {'query_id':query_id,
+                        'hits' : [], }
+                for hit in q_hits:
+                    hsp = hit[0]
+                    target_acc = p_cathdomain.findall(hit.id)[0]
+                    try:
+                        jdict = hsp2jdict( hsp,simple = 1)
+                        jdict['query_id'] = query_id
+                        jdict['target_id'] = acc2seq[target_acc]
+                        jjdict['hits'].append(jdict)
+                    except BaseException as e:
+                        c1.fail('', target_acc)
+                    finally:
+                        c1.count()
+                if c1.f:
+                    c0.fail('%d of %d instances failed for HMM %s \n Most Recent Exception' % (c1.f, c1.f, acc, c1.e ), acc)
+                q.put( jjdict )
+
+            except Exception as e:
+    #             raise Exception(e)
+    #             q.put(e)
+
+                try:
+                    c0.fail('%s failed for %s'%(q_hits.id, e), q_hits.id)
+                except:
+                    pass
+            finally:
+                c0.count()
+        c0.summary()
+
+
+
+    def db_listener( hmms, q, ):
+    # def db_listener( hmms, ):
+        c = counter([],INF=1, )
+        hmms = hmms.defer('text')
+        with transaction.atomic():
+            while 1:
+
+                try:
+                    obj = q.get()
+                    c.count()
+                    if obj=='kill':
+                        print obj
+                        break
+                    else:
+                        hmm = hmms.get(id = obj['query_id'])
+                        oldhits = list(
+                            hmm.hits.values_list('id',flat = True)
+                        )
+                        bulk = []
+
+                        for jdict in obj['hits']:
+                            if jdict['target_id'] in oldhits:
+                                continue
+                            else:
+                                db_hit = hit4hmm2hsp(**jdict)
+                                bulk.append( db_hit )
+    #                             db_hit.save()
+                        hit4hmm2hsp.objects.bulk_create( bulk )
+                except BaseException as e:
+                    print e
+                    c.fail('%s'%e,)
+    #                 break
+            c.summary()
+
+
+
+
+
+    import sys
+    if 1:
+        f_handles = split_file( INPUT,number = pcount - 2)
+    #     f_handles = split_file( f0,number = pcount - 2)
+
+        import os
+        import multiprocessing as mp
+        # from 
+        from multiprocessing.managers import BaseManager, SyncManager
+        # class MyManager(BaseManager): pass
+        class MyManager(SyncManager): pass
+        MyManager.register('counter',counter)
+        from time import time
+
+        t0 = time()
+        if __name__=='__main__':
+        #     m = mp.Manager()
+            m = MyManager()
+            m.start()
+        #     raise Exception
+            c0 = m.counter([],INF=1, ifprint = 1,
+#                           stdout = sys.__stdout__
+                          )
+            acc2hmm = m.dict(acc2hmm_raw)
+            acc2seq = m.dict(acc2seq_raw)
+            pxs = [c0,acc2hmm,acc2seq]
+
+            q = m.Queue();          
+            if 1:
+                pool = mp.Pool( pcount )
+        #     with mp.Pool(mp.cpu_count() - 1) as pool:
+                watcher  = pool.apply_async(db_listener, args = [hmms, q,])
+                jobs = []
+                for f_handle in f_handles:
+                    print f_handle
+#                     job  = mp.Process(target = parse)
+                    job  = pool.apply_async(parse_worker, args = (f_handle, q, pxs))
+                    jobs.append(job)
+        
+                for job in jobs:                   
+                    job.get()
+#                 for i in range(1000):
+#                     obj = q.get()
+#                     print obj
+                
+                q.put('kill')
+                _ = watcher.get()
+
+
+            ###### Delete temporary files
+            for f in f_handles:
+                os.remove(f)
+    #         c.summary()
+
+        t = time() - t0
+        ts.append(t)
+        print pcount, t 
+    return pool
+    
+def reset_nodes(Cver):
+    Cver.classification_set.all().delete()
+    jdict = {   
+        'Class'     : 0,
+        'arch'      : 0,
+        'level_id'  : 1 ,
+        'version_id': Cver.id,
+        }
+    rootnode = verify_exist_entry( classification, **jdict)
+    print rootnode
+    class_nodes = [
+        {   
+        'Class'     : 1,
+        'arch'      : 0,
+        'level_id'  : 2 ,
+        'version_id': Cver.id,
+        'parent_id' : rootnode.id,
+        },
+        {   
+        'Class'     : 2,
+        'arch'      : 0,
+        'level_id'  : 2 ,
+        'version_id': Cver.id,
+        'parent_id' : rootnode.id,
+        },
+        {   
+        'Class'     : 3,
+        'arch'      : 0,
+        'level_id'  : 2 ,
+        'version_id': Cver.id,
+        'parent_id' : rootnode.id,
+        },
+        {   
+        'Class'     : 4,
+        'arch'      : 0,
+        'level_id'  : 2 ,
+        'version_id': Cver.id,
+        'parent_id' : rootnode.id,
+        },
+    ]
+    for jdict in class_nodes:
+        node = verify_exist_entry( classification, **jdict)
+        print node
+    print Cver.classification_set.count()    
+    # print time() - t0
