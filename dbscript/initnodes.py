@@ -24,11 +24,18 @@ mapdict = {}
 failcount = 0
 with transaction.atomic():
 #	 cc=0
-	lines = data.splitlines()[:2000]
+	# lines = data.splitlines()[:2000]
+	lines = data.splitlines()
 	c = counter(lines, per = 1000)
 	for line in lines:
 		try:
-			n,conf = parse_domain(line, v_curr)
+		    lst = line.split()
+		    jdict = {
+		     domain_id : lst[0] ,
+		     homsf_str : lst[1] ,   
+		     chopping  : lst[2] ,
+		    }
+			n,conf = parse_domain( jdict, v_curr)
 			confcount += conf
 		except:
 			failcount += 1

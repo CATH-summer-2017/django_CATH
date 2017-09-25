@@ -152,13 +152,16 @@ def test__norm(D_curr, reverse_dict,  letter = 'S', seqDB_curr = None, dnum = 2,
 
     sids = set(seqDB_curr.sequence_set.values_list('id'))
     rv_field = reverse_field[letter]
-    nodes = classification.objects.filter(level__letter = letter)
+    # nodes = classification.objects.filter(level__letter = letter)
+    nodes = classification.objects
     
     for x,y,v in it:
         # hmm1 = hmms.get(id = x + 1)
         # hmm2 = hmms.get(id = y + 1)
-        hmm1 = nodes.filter(id = reverse_dict[x])
-        hmm2 = nodes.filter(id = reverse_dict[y])
+        node1__id = reverse_dict[x]
+        node2__id = reverse_dict[y]
+        hmm1 = nodes.filter(id = node1__id)
+        hmm2 = nodes.filter(id = node2__id)
         hmm1hits = hmm1.values_list( rv_field )
         hmm2hits = hmm2.values_list( rv_field )
         hmm1hits = set(hmm1hits) & sids
@@ -171,7 +174,11 @@ def test__norm(D_curr, reverse_dict,  letter = 'S', seqDB_curr = None, dnum = 2,
         act = v
 #         print v
 #         print intercount
-        msg = '%s against %s overlaps: Expected: %f, Actual: %f from '%(hmm1[0],hmm2[0], exp, act )
+        try:
+            msg = '%s against %s overlaps: Expected: %f, Actual: %f from '%(hmm1[0],hmm2[0], exp, act )
+        except:
+            raise Exception("failed hmm1:%s , hmm2:%s" %(node1__id,node2__id))
+
 #         print msg
         
         success = ( round(act, dnum) == round(exp, dnum) )

@@ -103,6 +103,13 @@ def stdoutIO(stdout=None):
 
 
 import urllib2
+
+def download(url):
+    request = urllib2.Request( url )
+    response = urllib2.urlopen(request)
+    s = response.read()
+    print "finshed download %s" % url
+    return s
 def get_gzip(url = 'http://download.cathdb.info/cath/releases/daily-release/newest/cath-b-s35-newest.gz'):
 
 # putative_s35_url = 'http://download.cathdb.info/cath/releases/daily-release/newest/cath-b-s35-newest.gz'
@@ -216,7 +223,7 @@ def split_file(fname, linecount = None, number = None):
     f_handles = []
     tempdir = mkdtemp(prefix = '/tmp/feng')
     
-    with open(fname) as f:
+    with open(fname,'r') as f:
         lines = f.readlines()
     lcount = len(lines)
        
